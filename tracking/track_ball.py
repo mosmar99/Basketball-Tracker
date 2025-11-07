@@ -1,6 +1,7 @@
 from ultralytics import YOLO
 import supervision as sv
 import numpy as np
+import pandas as pd
 import sys
 sys.path.append("../")
 from utils import read_stub, save_stub
@@ -71,4 +72,12 @@ class BallTracker():
             else:
                 prev_good_frame_idx = i
 
+        return ball_positions
+    
+    def interp_ball_pos(self, ball_positions):
+        ball_positions = [pos.get(1, {}).get("bbox", []) for pos in ball_positions]
+        df_ball_positions = pd.DataFrame(ball_positions, columns=["x1", "y1", "x2", "y2"])
+        df_ball_positions = df_ball_positions.interpolate()
+        df_ball_positions = df_ball_positions.bfill()
+        ball_positions = [{1:{"bbox": pos}} for pos in df_ball_positions.to_numpy().tolist()]
         return ball_positions
