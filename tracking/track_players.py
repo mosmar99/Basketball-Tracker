@@ -44,7 +44,6 @@ class PlayerTracker():
                     tracks[frame_id][track_id] = {"bbox": bbox}
 
         save_stub(stub_path, tracks)
-
         return tracks
               
 
