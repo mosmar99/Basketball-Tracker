@@ -20,6 +20,9 @@ def main():
                                                    read_from_stub=True,
                                                    stub_path="stubs/ball_track_stubs.pkl")
     
+    # erase wrongly detected basketball tracks
+    ball_tracks = ball_tracker.remove_incorrect_detections(ball_tracks)
+
     # fill canvas with annotations
     player_tracks_drawer = PlayerTrackDrawer()
     player_vid_frames = player_tracks_drawer.draw_annotations(vid_frames, player_tracks)
