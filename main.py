@@ -1,11 +1,12 @@
 from utils import read_video, save_video
 from tracking import PlayerTracker, BallTracker
-from canvas import PlayerTrackDrawer, BallTrackDrawer
+from canvas import PlayerTrackDrawer, BallTrackDrawer, BallPossessionDrawer
 from team_assigner import TeamAssigner
+from ball_acq import BallAcquisitionSensor
 
 def main():
     # read video
-    vid_name = "video_1"
+    vid_name = "video_2"
     vid_frames = read_video(f"input_videos/{vid_name}.mp4")
 
     # init tracker
@@ -25,18 +26,30 @@ def main():
                                                                          read_from_stub=True, 
                                                                          stub_path="stubs/player_assignment_stubs.pkl")
     
+    # ball acquisition sensor
+    ball_acquisition_sensor = BallAcquisitionSensor()
+    ball_acquisition_list = ball_acquisition_sensor.detect_ball_possession(player_tracks, ball_tracks)
+
     # erase wrongly detected basketball tracks & interp. between conservative basketball positions
     ball_tracks = ball_tracker.remove_incorrect_detections(ball_tracks)
     ball_tracks = ball_tracker.interp_ball_pos(ball_tracks) 
 
     # fill canvas with annotations
     player_tracks_drawer = PlayerTrackDrawer()
+    ball_track_drawer = BallTrackDrawer()
+    ball_possession_drawer = BallPossessionDrawer()
+
     player_vid_frames = player_tracks_drawer.draw_annotations(vid_frames, 
                                                               player_tracks, 
-                                                              team_player_assignments)
-
-    ball_track_drawer = BallTrackDrawer()
-    output_vid_frames = ball_track_drawer.draw_annotations(player_vid_frames, ball_tracks)
+                                                              team_player_assignments,
+                                                              ball_acquisition_list)
+    
+    output_vid_frames = ball_track_drawer.draw_annotations(player_vid_frames, 
+                                                           ball_tracks)
+    
+    output_vid_frames = ball_possession_drawer.draw_ball_possession(output_vid_frames, 
+                                                                    team_player_assignments, 
+                                                                    ball_acquisition_list)
 
     # save video
     save_video(output_frames=output_vid_frames, output_path=f"output_videos/{vid_name}.avi")

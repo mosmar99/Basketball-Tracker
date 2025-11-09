@@ -5,3 +5,6 @@ def get_center_bbox(bbox):
 def get_width_bbox(bbox):
     x1,_,x2,_ = bbox
     return x2-x1
+
+def get_straight_line_distance(p1, p2):
+    return ((p1[0]-p2[0])**2 + (p1[1]-p2[1])**2)**0.5
