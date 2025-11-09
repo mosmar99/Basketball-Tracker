@@ -5,7 +5,7 @@ from team_assigner import TeamAssigner
 
 def main():
     # read video
-    vid_name = "video_3"
+    vid_name = "video_1"
     vid_frames = read_video(f"input_videos/{vid_name}.mp4")
 
     # init tracker
@@ -20,7 +20,7 @@ def main():
     ball_tracks = ball_tracker.get_object_tracks(vid_frames,
                                                  read_from_stub=True,
                                                  stub_path="stubs/ball_track_stubs.pkl")
-    team_assigner = TeamAssigner(team_A="RED shirt", team_B="WHITE shirt")
+    team_assigner = TeamAssigner()
     team_player_assignments = team_assigner.get_player_teams_over_frames(vid_frames, player_tracks, 
                                                                          read_from_stub=True, 
                                                                          stub_path="stubs/player_assignment_stubs.pkl")
