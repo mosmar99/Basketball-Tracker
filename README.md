@@ -1,4 +1,6 @@
-### Motivation
+# 
+
+# Motivation
 Within the field of professional sports, the usage of analytics to understand tactics and player performance has in recent times become increasingly widespread. Famously, the movie Moneyball (which was inspired by a real-life story), utilized sabermetrics to conduct empirical analysis of baseball games. The utilization of sabermetrics were subsequently overshadowed by the application of more sophisticated techniques, such as **machine learning** models. This project applies such techniques to basketball games.
 
 Basketball is both dynamic and continuous in nature. Applying, for example, computer vision models to this field can prove quite rewarding, offering rich and complex data to infer analytics from.
@@ -7,7 +9,7 @@ Currently, the NBA utilizes statistics gathered by SportVU, which is a camera sy
  
 Concretely, our aim is to automatically detect and track player as well as ball movement, with the intent of extracting actionable metrics from game footage. These metrics could include speed, positioning, ball possession, movement patterns and other performance indicators. The analytical results are to be without cost and immediately rendered available to its user, be it smaller organizations or hobbyists.
 
-### Pre-trained Models
+# Pre-trained Models
 **Object Detection Model**: YOLOv11 (You-Only-Look-Once) [YOLO-LINK](https://github.com/ultralytics/ultralytics). Its a although initially published in 2015, through persistent versioning of the model, it has retained its position as a state-of-the-art model. Its core strengths are its *speed*, *detection accuracy*, *good generalization*, and that its *open-source*. Each versioning of YOLO attempts to improve on the previous, be it better handling of edge cases, quicker object detection or higher accuracy.
 
 ![alt text](imgs/readme/person.png)
@@ -23,10 +25,10 @@ The architecture above is illustrative of the original implementation of YOLO (i
 - Low frequency of basketball detection. The accuracy of basketball detection is initially low. 
 - **Solution**: Fine-tune the YOLO model. Give it labeled examples to train on. We get a already trained model (transfer learning), but it does not know how to solve our current task.
 
-### Dataset
-...
+# Dataset
+The finalized product is expected to be able to **derive** insights from various kinds of input videos. Although, we put some constraints on it. ****
 
-### Authors (Equal Contribution)
+# Authors (Equal Contribution)
 1. Mahmut Osmanovic
 2. Isac Paulssson
 3. Sebastian Tuura
