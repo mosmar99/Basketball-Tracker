@@ -1,6 +1,9 @@
 import cv2
 from PIL import Image, ImageEnhance
 from transformers import CLIPProcessor, CLIPModel
+from ultralytics import SAM
+import numpy as np
+import matplotlib.pyplot as plt
 
 import sys 
 sys.path.append('../')
@@ -16,6 +19,8 @@ class TeamAssigner:
     
         self.team_A = team_A
         self.team_B = team_B
+        self.sam2 = SAM("sam2.1_b.pt")
+
 
     def load_model(self):
         self.model = CLIPModel.from_pretrained("patrickjohncyh/fashion-clip")
@@ -23,8 +28,32 @@ class TeamAssigner:
 
     def get_player_color(self,frame,bbox):
         image = frame[int(bbox[1]):int(bbox[3]), int(bbox[0]):int(bbox[2])]
-        rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        pil_image = Image.fromarray(rgb_image) # pytorch expects this format
+
+        results_list = self.sam2(image, bboxes=[0, 0, int(bbox[2])-int(bbox[0]), int(bbox[3])-int(bbox[1])])
+        masks_obj = results_list[0].masks  # Masks object
+
+        if masks_obj is not None and len(masks_obj) > 0:
+            mask_tensor = masks_obj.data  # torch.Tensor of shape (1, H, W)
+            mask_numpy = mask_tensor[0].cpu().numpy().astype(np.uint8)
+
+
+        gray_bg = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        gray_bg = cv2.cvtColor(gray_bg, cv2.COLOR_GRAY2BGR)
+        masked_img = np.where(mask_numpy[..., None] == 1, image, gray_bg)
+
+        #testing
+        # plt.imshow(cv2.cvtColor(masked_img, cv2.COLOR_BGR2RGB))
+        # plt.axis('off')
+        # plt.title("title")
+        # plt.show()
+
+        rgb_image = cv2.cvtColor(masked_img, cv2.COLOR_BGR2RGB) # grayed img
+        rgba_image = np.dstack([rgb_image, mask_numpy * 255]) # transparent img
+        # plt.imshow(rgba_image)
+        # plt.axis('off')
+        # plt.title("title")
+        # plt.show()
+        pil_image = Image.fromarray(rgba_image) # pytorch expects this format
 
         team_classes = [self.team_A, self.team_B]
 

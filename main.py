@@ -6,7 +6,7 @@ from ball_acq import BallAcquisitionSensor
 
 def main():
     # read video
-    vid_name = "video_2"
+    vid_name = "video_1"
     vid_frames = read_video(f"input_videos/{vid_name}.mp4")
 
     # init tracker
