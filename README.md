@@ -19,7 +19,7 @@ Concretely, our aim is to automatically detect and track player as well as ball 
   - Ball position heatmap
 - Vizualize insights
 
-### Nice to Have:
+### Nice to have:
 - Statistics
   - Goals (Individual)
   - Attempted (Individual)
