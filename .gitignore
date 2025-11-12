@@ -2,8 +2,10 @@
 /runs
 /models
 /Basketball-Players-17
+/reloc2-1
 /results
 /Basketball-1
 **/__pycache__/
 *.pyc
 /.env
+*.pt
