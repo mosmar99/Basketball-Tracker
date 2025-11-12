@@ -32,11 +32,20 @@ Concretely, our aim is to automatically detect and track player as well as ball 
 
 ### Intended tools:
 - Object Detection (Ultralytics YOLOv11/SAM2 or other suitable)
-- Experiment Tracking (MLFlow)
-- Model Repository (MLFlow)
+- Experiment and Model Tracking (Neptune)
+![](imgs/readme/neptune.png)
 - Id Tracking (Supervision ByteTrack or BoT-SORT)
 - Homography (OpenCV SIFT or other suitable keypoint detection model)
 - Containerization (Docker)
+
+Create an image:
+
+    docker build -f Dockerfile.dev -t basketball-tracker-dev .
+
+Run image in a containerized developement environment:
+
+    # docker run --rm -it --gpus all   -v $(pwd):/app -w /app   basketball-tracker-dev   python3 FILE_NAME.py
+
 - Infrastructure Management (Terraform)
 - Database (MongoDB for structured data storage)
 
