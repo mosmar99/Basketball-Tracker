@@ -1,0 +1,15 @@
+ultralytics==8.3.223
+opencv-python==4.12.0.88
+numpy
+pandas
+matplotlib
+scikit-learn
+transformers
+roboflow
+polars
+supervision
+transformers
+pillow
+roboflow
+python-dotenv
+neptune

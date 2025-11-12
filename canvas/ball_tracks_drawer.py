@@ -1,4 +1,3 @@
-
 from .utils import draw_triangle
 
 class BallTrackDrawer():
