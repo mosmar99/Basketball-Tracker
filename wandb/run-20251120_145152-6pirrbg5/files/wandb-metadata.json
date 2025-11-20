@@ -1,0 +1,39 @@
+{
+  "os": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+  "python": "CPython 3.12.12",
+  "startedAt": "2025-11-20T13:51:52.775568Z",
+  "program": "/home/maso/university/advanced_ai_systems_vt2025p2/Basketball-Tracker/wnb_artifacts.ipynb",
+  "codePath": "/home/maso/university/advanced_ai_systems_vt2025p2/Basketball-Tracker/wnb_artifacts.ipynb",
+  "codePathLocal": "wnb_artifacts.ipynb",
+  "git": {
+    "remote": "git@github.com:mosmar99/Basketball-Tracker.git",
+    "commit": "7783d623acb2070387cf306385b11bb2db21e6d8"
+  },
+  "email": "mahmut.osmanovic@outlook.com",
+  "root": "/home/maso/university/advanced_ai_systems_vt2025p2/Basketball-Tracker",
+  "host": "maso",
+  "executable": "/home/maso/miniconda3/envs/abs/bin/python",
+  "cpu_count": 16,
+  "cpu_count_logical": 32,
+  "gpu": "NVIDIA GeForce RTX 5090",
+  "gpu_count": 1,
+  "disk": {
+    "/": {
+      "total": "1081101176832",
+      "used": "37033435136"
+    }
+  },
+  "memory": {
+    "total": "58965704704"
+  },
+  "gpu_nvidia": [
+    {
+      "name": "NVIDIA GeForce RTX 5090",
+      "memoryTotal": "34190917632",
+      "architecture": "Blackwell",
+      "uuid": "GPU-591bfa15-4035-1069-2b67-e8d6224daa81"
+    }
+  ],
+  "cudaVersion": "13.0",
+  "writerId": "hc2zds38vqgxbupgnroaqbydmdcwebu0"
+}
