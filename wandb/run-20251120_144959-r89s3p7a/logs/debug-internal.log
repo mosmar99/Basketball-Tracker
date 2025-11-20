@@ -1,8 +1,0 @@
-{"time":"2025-11-20T14:50:00.194791219+01:00","level":"INFO","msg":"stream: starting","core version":"0.23.0"}
-{"time":"2025-11-20T14:50:00.684101465+01:00","level":"INFO","msg":"stream: created new stream","id":"r89s3p7a"}
-{"time":"2025-11-20T14:50:00.684311198+01:00","level":"INFO","msg":"handler: started","stream_id":"r89s3p7a"}
-{"time":"2025-11-20T14:50:00.684473913+01:00","level":"INFO","msg":"stream: started","id":"r89s3p7a"}
-{"time":"2025-11-20T14:50:00.684508863+01:00","level":"INFO","msg":"writer: started","stream_id":"r89s3p7a"}
-{"time":"2025-11-20T14:50:00.684523443+01:00","level":"INFO","msg":"sender: started","stream_id":"r89s3p7a"}
-{"time":"2025-11-20T14:50:00.874932988+01:00","level":"ERROR","msg":"HTTP error","status":404,"method":"POST","url":"https://api.wandb.ai/graphql"}
-{"time":"2025-11-20T14:50:00.8750441+01:00","level":"ERROR","msg":"runupserter: failed to init run","error":"returned error 404: {\"data\":{\"upsertBucket\":null},\"errors\":[{\"message\":\"entity baas5 not found during upsertBucket\",\"path\":[\"upsertBucket\"]}]}"}
