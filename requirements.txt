@@ -12,4 +12,7 @@ transformers
 pillow
 roboflow
 python-dotenv
-neptune
+docker
+minio
+boto3
+wandb
