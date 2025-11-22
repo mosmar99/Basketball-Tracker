@@ -43,34 +43,32 @@ class PlayerTracker():
         detections = self.detect_frames(vid_frames)
 
         tracks = []
+        total = len(vid_frames)
         for frame_id, frame in enumerate(vid_frames):
+            print(f"frame {frame_id}/{total}")
             detection = detections[frame_id]
             class_names =  detection.names
             class_names_inv = {val:key for key,val in class_names.items()}  
-            print(class_names_inv)
             detection_sv = sv.Detections.from_ultralytics(detection)
 
             refined_bboxes = []
             for det in detection_sv:
-                bbox_array = det[0]          # NumPy array: [x1, y1, x2, y2]
+                bbox_array = det[0]
                 x1, y1, x2, y2 = map(int, bbox_array)
                 conf = float(det[2])
-                class_id = int(det[3])       # class ID
+                class_id = int(det[3])
 
                 if class_names_inv['Player'] != class_id:
                     continue  # skip non-player detections
 
-                # Crop player from frame
                 player_crop = frame[y1:y2, x1:x2]
 
                 # SAM2 mask
                 results = self.sam2(player_crop, bboxes=[[0,0,x2-x1, y2-y1]])
-                mask = results[0].masks.data[0].cpu().numpy().astype(np.uint8)  # 2D mask
+                mask = results[0].masks.data[0].cpu().numpy().astype(np.uint8)
 
-                # Convert mask to tight bbox in the cropped coordinates
                 x_min_rel, y_min_rel, x_max_rel, y_max_rel = self.mask_to_bbox(mask)
 
-                # Convert back to frame coordinates
                 x1_ref = x1 + x_min_rel
                 y1_ref = y1 + y_min_rel
                 x2_ref = x1 + x_max_rel
