@@ -38,7 +38,7 @@ class TeamAssigner:
 
         return player_color
 
-    def get_player_team(self,frame,player_bbox,player_id):
+    def get_player_team(self, frame, player_bbox, player_id):
         if player_id in self.player_team_cache:
           return self.player_team_cache[player_id]
 
