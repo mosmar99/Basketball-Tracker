@@ -1,0 +1,30 @@
+service: "service:svc"
+labels:
+  owner: "baas-5"
+  project: "basketball_tracker"
+
+include:
+  - "service.py"
+  - "processors/"
+  - "utils/"
+
+python:
+  packages:
+    - opencv-python
+    - numpy
+    - boto3
+    - ffmpeg-python
+    - pillow
+    - torch
+    - torchvision
+    - tqdm
+    - bentoml
+  extra_index_url:
+    - https://download.pytorch.org/whl/cu128
+
+docker:
+  python_version: "3.12"
+  setup_script: |
+    git clone https://github.com/cvg/LightGlue.git /tmp/lightglue
+    pip install -r /tmp/lightglue/requirements.txt
+    pip install /tmp/lightglue
