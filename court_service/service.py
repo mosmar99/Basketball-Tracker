@@ -15,11 +15,9 @@ from utils.s3 import upload_to_s3
 
 app = FastAPI(title="Homography Service")
 
-# Initialize models once
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 stitcher = CourtStitcher(DEVICE)
 homography = HomographyInference(DEVICE)
-
 
 @app.post("/stitch")
 async def stitch_panorama(video: UploadFile = File(...)):
@@ -27,24 +25,18 @@ async def stitch_panorama(video: UploadFile = File(...)):
     tmp_video = f"/tmp/{job_id}.mp4"
     tmp_output_img = f"/tmp/{job_id}.jpg"
 
-    # Save uploaded video
     with open(tmp_video, "wb") as f:
         f.write(await video.read())
 
-    # Load frames
     frames = load_frames(tmp_video, sample_rate=3)
 
-    # Stitch panorama
     panorama = stitcher.align_and_stitch(frames)
     cv2.imwrite(tmp_output_img, panorama)
 
-    # Upload to S3
     s3_uri = upload_to_s3(tmp_output_img, "panoramas", f"{job_id}.jpg")
 
-    # Metadata
     h, w = panorama.shape[:2]
 
-    # Cleanup
     os.remove(tmp_video)
     os.remove(tmp_output_img)
 
@@ -56,12 +48,8 @@ async def stitch_panorama(video: UploadFile = File(...)):
         "device": DEVICE,
     }
 
-
 @app.post("/homography")
-async def estimate_homography(
-    frame: UploadFile = File(...),
-    reference: UploadFile = File(...)
-):
+async def estimate_homography(frame: UploadFile = File(...), reference: UploadFile = File(...)):
     frame_img = Image.open(frame.file).convert("RGB")
     ref_img = Image.open(reference.file).convert("RGB")
 
