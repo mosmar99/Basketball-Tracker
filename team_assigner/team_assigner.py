@@ -23,7 +23,7 @@ class TeamAssigner:
                  team_A= "WHITE shirt",
                  team_B= "DARK-BLUE shirt",
                  history_len = 50,
-                 crop_factor = 0.25,
+                 crop_factor = 0.375,
                  save_imgs = False
                  ):
         self.team_colors = {}
@@ -95,16 +95,23 @@ class TeamAssigner:
         
         counter = Counter(history)
         most_freq, _ = counter.most_common(1)[0]
+        print(counter)
+        print(most_freq)
         return 1 if most_freq == self.team_A else 2
 
     def get_player_team(self,frame,player_bbox,player_id):
+
         if player_id in self.player_team_cache:
-          return self.player_team_cache[player_id]
+            return self.player_team_cache[player_id]
+        
+        history = list(self.player_team_cache_history[player_id])
+        if len(history) > self.history_len:
+            return self.get_team_from_history(player_id)
 
         player_color = self.get_player_color(frame,player_bbox)
         self.player_team_cache_history[player_id].append(player_color)
         team_id = self.get_team_from_history(player_id)
-
+        print(player_id)
         self.player_team_cache[player_id] = team_id
         return team_id
     
