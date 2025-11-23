@@ -2,9 +2,9 @@ import os
 import uuid
 import cv2
 import torch
-import bentoml
 import numpy as np
-from PIL.Image import Image # Use standard PIL Image for type hinting
+from fastapi import FastAPI, UploadFile, File
+from PIL import Image
 
 from processing.court_stitcher import CourtStitcher
 from processing.inference import HomographyInference
@@ -12,55 +12,68 @@ from processing.inference import HomographyInference
 from utils.video_io import load_frames
 from utils.s3 import upload_to_s3
 
-@bentoml.service(
-    name="Homography",
-    image=bentoml.images.Image(python_version="3.11").python_packages("torch", "transformers"),
-)
-class Homography:
-    def __init__(self):
-        self.DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-        self.stitcher = CourtStitcher(self.DEVICE)
-        self.homography = HomographyInference(self.DEVICE)
 
-    @bentoml.api(route="/stitch")
-    def stitch_panorama(self, video):
-        job_id = str(uuid.uuid4())
-        tmp_video = f"/tmp/{job_id}.mp4"
-        tmp_output_img = f"/tmp/{job_id}.jpg"
+app = FastAPI(title="Homography Service")
 
-        video.save(tmp_video)
-        frames = load_frames(tmp_video, sample_rate=3)
+# Initialize models once
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+stitcher = CourtStitcher(DEVICE)
+homography = HomographyInference(DEVICE)
 
-        panorama = self.stitcher.align_and_stitch(frames)
 
-        cv2.imwrite(tmp_output_img, panorama)
+@app.post("/stitch")
+async def stitch_panorama(video: UploadFile = File(...)):
+    job_id = str(uuid.uuid4())
+    tmp_video = f"/tmp/{job_id}.mp4"
+    tmp_output_img = f"/tmp/{job_id}.jpg"
 
-        s3_uri = upload_to_s3(tmp_output_img, "panoramas", f"{job_id}.jpg")
+    # Save uploaded video
+    with open(tmp_video, "wb") as f:
+        f.write(await video.read())
 
-        h, w = panorama.shape[:2]
+    # Load frames
+    frames = load_frames(tmp_video, sample_rate=3)
 
-        os.remove(tmp_video)
-        os.remove(tmp_output_img)
+    # Stitch panorama
+    panorama = stitcher.align_and_stitch(frames)
+    cv2.imwrite(tmp_output_img, panorama)
 
-        return {
-            "job_id": job_id,
-            "panorama_uri": s3_uri,
-            "width": w,
-            "height": h,
-            "device": self.DEVICE
-        }
+    # Upload to S3
+    s3_uri = upload_to_s3(tmp_output_img, "panoramas", f"{job_id}.jpg")
 
-    @bentoml.api(route="/homography")
-    def estimate_homography(self, frame: Image, reference: Image):
-        frame_np = np.asarray(frame)
-        ref_np = np.asarray(reference)
+    # Metadata
+    h, w = panorama.shape[:2]
 
-        H = self.homography.estimate_court_homography(frame_np, ref_np)
+    # Cleanup
+    os.remove(tmp_video)
+    os.remove(tmp_output_img)
 
-        if H is None:
-            return {"success": False, "error": "Not enough matches"}
+    return {
+        "job_id": job_id,
+        "panorama_uri": s3_uri,
+        "width": w,
+        "height": h,
+        "device": DEVICE,
+    }
 
-        return {
-            "success": True,
-            "homography": H.tolist()
-        }
+
+@app.post("/homography")
+async def estimate_homography(
+    frame: UploadFile = File(...),
+    reference: UploadFile = File(...)
+):
+    frame_img = Image.open(frame.file).convert("RGB")
+    ref_img = Image.open(reference.file).convert("RGB")
+
+    frame_np = np.asarray(frame_img)
+    ref_np = np.asarray(ref_img)
+
+    H = homography.estimate_court_homography(frame_np, ref_np)
+
+    if H is None:
+        return {"success": False, "error": "Not enough matches"}
+
+    return {
+        "success": True,
+        "homography": H.tolist()
+    }
