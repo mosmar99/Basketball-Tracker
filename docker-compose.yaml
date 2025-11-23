@@ -1,0 +1,35 @@
+services:
+  court-service:
+    build:
+      context: .
+      dockerfile: court_service/Dockerfile
+    image: court-service
+    ports:
+      - "8002:8000"
+    env_file:
+      - .env
+    depends_on:
+      - minio
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  # The MinIO S3 service
+  minio:
+    image: minio/minio
+    container_name: minio
+    ports:
+      - "9000:9000"   # S3 API port
+      - "9001:9001"   # Web console port
+    env_file:
+      - .env
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio-data:/data
+
+volumes:
+  minio-data:

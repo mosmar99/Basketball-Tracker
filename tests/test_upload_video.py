@@ -5,7 +5,7 @@ BUCKET_PROCESSED = "basketball-processed"
 BUCKET_MODELS = "basketball-models"
 
 def test_upload_video():
-    vid_name = "video_2"
+    vid_name = "video_1"
     local_path = f"input_videos/{vid_name}.mp4"
     key = f"{vid_name}.mp4"
     uri = upload_video(local_path, key, BUCKET_NAME=BUCKET_RAW)

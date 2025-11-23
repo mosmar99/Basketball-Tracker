@@ -1,7 +1,6 @@
 import cv2
 import torch
 import numpy as np
-from tqdm import tqdm
 
 def warp_to_cylinder(frame, f):
     h, w = frame.shape[:2]
@@ -29,7 +28,7 @@ class CourtStitcher:
         h, w = frames[0].shape[:2]
 
         focal_length = w * 1.6
-        cylindrical_frames = [warp_to_cylinder(f, focal_length) for f in tqdm(frames, desc="[INFO] Warping frames to cylinder")]
+        cylindrical_frames = [warp_to_cylinder(f, focal_length) for f in frames]
 
         # --- Warp masks to cylindrical space if provided ---
         cylindrical_masks = None
@@ -46,7 +45,7 @@ class CourtStitcher:
         M_matrices = [np.eye(3)]  # transformations from each frame to the global reference (frame 0)
 
         # --- Estimate homographies ---
-        for i in tqdm(range(1, len(cylindrical_frames)), desc="[INFO] Estimating homographies"):
+        for i in range(1, len(cylindrical_frames)):
             gray = cv2.cvtColor(cylindrical_frames[i], cv2.COLOR_BGR2GRAY)
             valid_mask = valid_masks[i]
             kp, des = sift.detectAndCompute(gray, valid_mask)
@@ -82,7 +81,7 @@ class CourtStitcher:
         aligned_masks = [] if cylindrical_masks is not None else None
         translation_matrix = np.array([[1, 0, tx], [0, 1, ty], [0, 0, 1]])
 
-        for i, frame in enumerate(tqdm(cylindrical_frames, desc="[INFO] Warping to global panorama")):
+        for i, frame in enumerate(cylindrical_frames):
             M_final = translation_matrix @ M_matrices[i]
             warped_frame = cv2.warpPerspective(frame, M_final, panorama_size)
             aligned_frames.append(warped_frame)
@@ -98,7 +97,7 @@ class CourtStitcher:
         background = np.zeros((h, w, c), dtype=np.uint8)
 
         # Process one row at a time (OOM)
-        for y in tqdm(range(h), desc="[INFO] Calculating median row-by-row"):
+        for y in range(h):
             row_stack = np.array([frame[y] for frame in frames])
             
             for x in range(w):
@@ -119,7 +118,7 @@ class CourtStitcher:
 
         background = np.zeros((H, W, C), dtype=np.uint8)
 
-        for y0 in tqdm(range(0, H, chunk_size), desc="[INFO] Background median (GPU chunks)"):
+        for y0 in range(0, H, chunk_size):
             y1 = min(y0 + chunk_size, H)
             chunk = torch.from_numpy(stack[:, y0:y1]).permute(0, 3, 1, 2).to(self.device)  # (N,3,h,W)
             mask = (chunk > 0).any(dim=1, keepdim=True)
