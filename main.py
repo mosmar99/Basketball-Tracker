@@ -1,58 +1,120 @@
 from utils import read_video, save_video
-from tracking import PlayerTracker, BallTracker
+from tracking import PlayerTracker, BallTracker, get_production_model_path
 from canvas import PlayerTrackDrawer, BallTrackDrawer, BallPossessionDrawer
 from team_assigner import TeamAssigner
 from ball_acq import BallAcquisitionSensor
+from shared import download_to_temp, upload_video
+import requests
+import json
+
+def get_team_assignments_from_service(local_video_path: str, player_tracks):
+    url = "http://localhost:8001/assign_teams"
+    tracks_json_str = json.dumps(player_tracks)
+    with open(local_video_path, "rb") as f:
+        files = {
+            "file": (local_video_path, f, "video/mp4"),
+            "player_tracks_file": ("player_tracks.json", tracks_json_str.encode("utf-8"), "application/json")
+        }
+        r = requests.post(url, files=files)
+    r.raise_for_status()
+    data = r.json()
+    return data["team_assignments"]
+
+def get_tracks_from_service(local_video_path: str):
+    url = "http://localhost:8000/track"
+    with open(local_video_path, "rb") as f:
+        files = {"file": (local_video_path, f, "video/mp4")}
+        r = requests.post(url, files=files)
+    r.raise_for_status()
+    data = r.json()
+    return data["player_tracks"], data["ball_tracks"]
+
+def deserialize_tracks(serialized):
+    tracks = []
+    for frame in serialized:
+        frame_dict = {}
+        for obj in frame:
+            track_id = int(obj["track_id"])
+            bbox = obj.get("bbox", [])
+            frame_dict[track_id] = {"bbox": bbox}
+        tracks.append(frame_dict)
+    return tracks
+
+def deserialize_team_assignments(serialized):
+    out = []
+    for frame in serialized:
+        frame_dict = {}
+        for entry in frame:
+            pid = int(entry["player_id"])
+            tid = int(entry["team_id"])
+            frame_dict[pid] = tid
+        out.append(frame_dict)
+    return out
 
 def main():
-    # read video
+    # 1) Identify video in MinIO
     vid_name = "video_1"
-    vid_frames = read_video(f"input_videos/{vid_name}.mp4")
+    bucket = "basketball-raw-videos"              
+    key = f"{vid_name}.mp4"
 
-    # init tracker
-    model_path = "models/ft_best.pt"
-    player_tracker = PlayerTracker(model_path=model_path)
-    ball_tracker = BallTracker(model_path=model_path)
+    # 2) Download from MinIO to a temp file
+    tmp_video_path = download_to_temp(key=key, bucket=bucket)
 
-    # get tracks from videoframes by team
-    player_tracks = player_tracker.get_object_tracks(vid_frames,
-                                                     read_from_stub=True,
-                                                     stub_path="stubs/player_track_stubs.pkl")
-    ball_tracks = ball_tracker.get_object_tracks(vid_frames,
-                                                 read_from_stub=True,
-                                                 stub_path="stubs/ball_track_stubs.pkl")
-    team_assigner = TeamAssigner()
-    team_player_assignments = team_assigner.get_player_teams_over_frames(vid_frames, player_tracks, 
-                                                                         read_from_stub=True, 
-                                                                         stub_path="stubs/player_assignment_stubs.pkl")
-    
-    # ball acquisition sensor
+    # 3) Read frames from that temp file
+    vid_frames = read_video(tmp_video_path)
+
+    # 4) Get player and ball tracks from tracks service
+    player_tracks_json, ball_tracks_json = get_tracks_from_service(tmp_video_path)
+    player_tracks = deserialize_tracks(player_tracks_json)
+    ball_tracks = deserialize_tracks(ball_tracks_json)
+
+    # 5) Get player team assignments from assignment service
+    team_player_assignments = get_team_assignments_from_service(
+        tmp_video_path,
+        player_tracks,
+    )
+    team_player_assignments = deserialize_team_assignments(team_player_assignments)
+
+    # 6) Ball acquisition + ball track cleanup
     ball_acquisition_sensor = BallAcquisitionSensor()
-    ball_acquisition_list = ball_acquisition_sensor.detect_ball_possession(player_tracks, ball_tracks)
+    ball_acquisition_list = ball_acquisition_sensor.detect_ball_possession(
+        player_tracks, ball_tracks
+    )
 
-    # erase wrongly detected basketball tracks & interp. between conservative basketball positions
-    ball_tracks = ball_tracker.remove_incorrect_detections(ball_tracks)
-    ball_tracks = ball_tracker.interp_ball_pos(ball_tracks) 
-
-    # fill canvas with annotations
+    # 7) Draw overlays
     player_tracks_drawer = PlayerTrackDrawer()
     ball_track_drawer = BallTrackDrawer()
     ball_possession_drawer = BallPossessionDrawer()
 
-    player_vid_frames = player_tracks_drawer.draw_annotations(vid_frames, 
-                                                              player_tracks, 
-                                                              team_player_assignments,
-                                                              ball_acquisition_list)
-    
-    output_vid_frames = ball_track_drawer.draw_annotations(player_vid_frames, 
-                                                           ball_tracks)
-    
-    output_vid_frames = ball_possession_drawer.draw_ball_possession(output_vid_frames, 
-                                                                    team_player_assignments, 
-                                                                    ball_acquisition_list)
+    player_vid_frames = player_tracks_drawer.draw_annotations(
+        vid_frames,
+        player_tracks,
+        team_player_assignments,
+        ball_acquisition_list,
+    )
 
-    # save video
-    save_video(output_frames=output_vid_frames, output_path=f"output_videos/{vid_name}.avi")
+    output_vid_frames = ball_track_drawer.draw_annotations(
+        player_vid_frames,
+        ball_tracks,
+    )
+
+    output_vid_frames = ball_possession_drawer.draw_ball_possession(
+        output_vid_frames,
+        team_player_assignments,
+        ball_acquisition_list,
+    )
+
+    # 8) Save result locally
+    local_path = f"output_videos/{vid_name}.mp4"
+    save_video(
+        output_frames=output_vid_frames,
+        output_path=f"output_videos/{vid_name}.mp4",
+    )
+
+    # 9) Upload results to minio 
+    output_bucket = "basketball-processed"
+    upload_video(local_path=local_path, key=key, BUCKET_NAME=output_bucket)
 
 if __name__ == "__main__":
     main()
+    

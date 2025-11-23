@@ -1,0 +1,31 @@
+# Use NVIDIA’s official CUDA runtime as base
+FROM nvidia/cuda:13.0.0-runtime-ubuntu22.04
+
+# Working directory inside container
+WORKDIR /app
+
+# Install Python and system dependencies
+RUN apt-get update && apt-get install -y \
+    python3 python3-pip python3-venv libgl1 libglib2.0-0 \
+    && rm -rf /var/lib/apt/lists/*
+
+# --- Install PyTorch + TorchVision (CUDA 13.0) ---
+RUN pip3 install torch torchvision --index-url https://download.pytorch.org/whl/cu130
+
+# --- Install your other Python dependencies ---
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Default working directory for running your code
+WORKDIR /app
+
+# (Optional) Copy project files if not mounting them live
+# COPY . .
+
+CMD ["python", "main.py"]
+
+# To build the Docker image, run:
+# docker build -f Dockerfile.dev -t basketball-tracker-dev .
+
+# RUN
+# docker run --rm -it --gpus all   -v $(pwd):/app -w /app   basketball-tracker-dev   python3 ft_yolo11x.py
