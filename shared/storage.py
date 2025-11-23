@@ -40,7 +40,7 @@ def upload_video(local_path, key, BUCKET_NAME="basketball"):
     print("Upload complete!")
     return f"s3://{BUCKET_NAME}/{key}"
 
-def upload_panorama(local_path, key, BUCKET_NAME="basketball-panorama"):
+def s3_upload(local_path, key, BUCKET_NAME="basketball"):
     s3 = get_s3()
 
     if not bucket_exists(s3, BUCKET_NAME):
