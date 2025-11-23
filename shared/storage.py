@@ -61,7 +61,7 @@ def delete_bucket(BUCKET_NAME="basketball"):
 
     print(f"Deleting all objects in bucket={BUCKET_NAME}...")
 
-    # Delete all objects in the bucket (non-versioned)
+    # Delete all objects in the bucket
     while True:
         resp = s3.list_objects_v2(Bucket=BUCKET_NAME)
         contents = resp.get("Contents", [])
@@ -83,16 +83,6 @@ def delete_bucket(BUCKET_NAME="basketball"):
     return BUCKET_NAME
 
 def download_to_temp(key, bucket):
-    """
-    Download an object from MinIO/S3 to a temporary local file.
-
-    Args:
-        key:    Object key inside the bucket (e.g. "video_1.mp4" or "games/game_1/video.mp4")
-        bucket: Bucket name (e.g. "basketball-raw-videos")
-
-    Returns:
-        Path to the local temporary file.
-    """
     s3 = get_s3()
 
     # Make a temp file with same extension as the key
