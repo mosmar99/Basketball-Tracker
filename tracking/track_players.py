@@ -6,7 +6,6 @@ import numpy as np
 import random
 
 sys.path.append("../")
-from utils import read_stub, save_stub
 
 class PlayerTracker():
     def __init__(self, model_path):
@@ -58,13 +57,8 @@ class PlayerTracker():
             self.available_ids.append(freed)
             self.available_ids.sort()
 
-    def get_object_tracks(self, vid_frames, read_from_stub=False, stub_path=None):
+    def get_object_tracks(self, vid_frames):
         
-        tracks = read_stub(read_from_stub, stub_path)
-        if tracks is not None:
-            if len(tracks) == len(vid_frames):
-                return tracks
-
         detections = self.detect_frames(vid_frames)
 
         tracks = []
@@ -133,7 +127,6 @@ class PlayerTracker():
 
             self.last_active_small_ids = current_ids
 
-        save_stub(stub_path, tracks)
         return tracks
               
 

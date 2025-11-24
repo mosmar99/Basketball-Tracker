@@ -4,7 +4,6 @@ import numpy as np
 import pandas as pd
 import sys
 sys.path.append("../")
-from utils import read_stub, save_stub
 
 class BallTracker():
     def __init__(self, model_path):
@@ -18,12 +17,7 @@ class BallTracker():
             detections += batch_detections
         return detections
     
-    def get_object_tracks(self, vid_frames, read_from_stub=False, stub_path=None):
-        tracks = read_stub(read_from_stub, stub_path)
-        if tracks is not None:
-            if len(tracks) == len(vid_frames):
-                return tracks
-
+    def get_object_tracks(self, vid_frames):
         detections = self.detect_frames(vid_frames)
         
         tracks = []
@@ -48,7 +42,6 @@ class BallTracker():
             if picked_bbox is not None:
                 tracks[frame_id][1] = {"bbox": picked_bbox}
 
-        save_stub(stub_path, tracks)
         return tracks
     
     def remove_incorrect_detections(self, ball_positions):

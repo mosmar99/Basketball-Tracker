@@ -1,11 +1,12 @@
 from utils import read_video, save_video
 from tracking import PlayerTracker, BallTracker, get_production_model_path
-from canvas import PlayerTrackDrawer, BallTrackDrawer, BallPossessionDrawer
+from canvas import PlayerTrackDrawer, BallTrackDrawer, BallPossessionDrawer, TDOverlay
 from team_assigner import TeamAssigner
 from ball_acq import BallAcquisitionSensor
 from shared import download_to_temp, upload_video
 import requests
 import json
+import os
 
 def get_team_assignments_from_service(local_video_path: str, player_tracks):
     url = "http://localhost:8001/assign_teams"
@@ -28,6 +29,33 @@ def get_tracks_from_service(local_video_path: str):
     r.raise_for_status()
     data = r.json()
     return data["player_tracks"], data["ball_tracks"]
+
+def get_homographies_from_service(local_video_path: str, local_reference_path: str):
+    # Ensure the files exist before trying to open them
+    if not os.path.exists(local_video_path):
+        raise FileNotFoundError(f"Video file not found: {local_video_path}")
+    if not os.path.exists(local_reference_path):
+        raise FileNotFoundError(f"Reference image not found: {local_reference_path}")
+
+    url = "http://localhost:8002/homographyvideo"
+    
+    # Open both files with their own handles
+    with open(local_video_path, "rb") as video_file, \
+         open(local_reference_path, "rb") as reference_file:
+        
+        # Use the correct file handles for each part
+        files = {
+            "video": ("video.mp4", video_file, "video/mp4"),
+            "reference": ("reference.jpg", reference_file, "image/jpeg")
+        }
+        
+        print("Sending request to server...")
+        r = requests.post(url, files=files)
+    
+    r.raise_for_status()
+    data = r.json()
+    
+    return data["H"]
 
 def deserialize_tracks(serialized):
     tracks = []
@@ -56,6 +84,8 @@ def main():
     vid_name = "video_1"
     bucket = "basketball-raw-videos"              
     key = f"{vid_name}.mp4"
+    court_reference = "court_homography_exploration/imgs/full_court_warped.jpg"
+    base_court = "court_homography_exploration/imgs/court.png"
 
     # 2) Download from MinIO to a temp file
     tmp_video_path = download_to_temp(key=key, bucket=bucket)
@@ -81,10 +111,14 @@ def main():
         player_tracks, ball_tracks
     )
 
-    # 7) Draw overlays
+    # 7) Get homographies from frames
+    H = get_homographies_from_service(tmp_video_path, court_reference)
+
+    # 8) Draw overlays
     player_tracks_drawer = PlayerTrackDrawer()
     ball_track_drawer = BallTrackDrawer()
     ball_possession_drawer = BallPossessionDrawer()
+    top_down_overlay = TDOverlay(court_reference, base_court)
 
     player_vid_frames = player_tracks_drawer.draw_annotations(
         vid_frames,
@@ -104,14 +138,21 @@ def main():
         ball_acquisition_list,
     )
 
-    # 8) Save result locally
+    output_vid_frames = top_down_overlay.draw_overlay(
+        output_vid_frames,
+        player_tracks,
+        team_player_assignments,
+        H,
+    )
+
+    # 9) Save result locally
     local_path = f"output_videos/{vid_name}.mp4"
     save_video(
         output_frames=output_vid_frames,
         output_path=f"output_videos/{vid_name}.mp4",
     )
 
-    # 9) Upload results to minio 
+    # 10) Upload results to minio 
     output_bucket = "basketball-processed"
     upload_video(local_path=local_path, key=key, BUCKET_NAME=output_bucket)
 

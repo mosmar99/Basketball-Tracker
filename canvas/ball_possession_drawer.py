@@ -27,6 +27,7 @@ class BallPossessionDrawer:
         output_vid_frames = []
         for frame_id, frame in enumerate(vid_frames):
             if frame_id == 0:
+                output_vid_frames.append(frame)
                 continue
             frame_drawn = self.draw_frame(frame, frame_id, team_ball_possession)
             output_vid_frames.append(frame_drawn)

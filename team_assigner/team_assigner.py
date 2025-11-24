@@ -1,22 +1,16 @@
 from collections import defaultdict, deque, Counter
 import cv2
-from PIL import Image, ImageEnhance
+from PIL import Image
 from transformers import CLIPProcessor, CLIPModel
 from ultralytics import SAM
 import numpy as np
-import matplotlib.pyplot as plt
-from sklearn.cluster import KMeans
 import random
 
 import random
 import os
-import torch
-import umap
-from umap import UMAP
 
 import sys 
 sys.path.append('../')
-from utils import read_stub, save_stub
 
 class TeamAssigner:
     def __init__(self,
@@ -109,13 +103,8 @@ class TeamAssigner:
         team_id = self.get_team_from_history(player_id)
         print(player_id)
         return team_id
-    
-    def get_player_teams_over_frames(self, vid_frames, player_tracks, read_from_stub=False, stub_path=None):
-        player_assignment = read_stub(read_from_stub, stub_path)
-        if player_assignment is not None:
-            if len(player_assignment) == len(vid_frames):
-                return player_assignment
 
+    def get_player_teams_over_frames(self, vid_frames, player_tracks):
         self.load_model()
         player_assignment=[]
         for frame_id, player_track in enumerate(player_tracks):        
@@ -125,7 +114,5 @@ class TeamAssigner:
             for player_id, track in player_track.items():
                 team = self.get_player_team(vid_frames[frame_id], track['bbox'], player_id)
                 player_assignment[frame_id][player_id] = team
-        
-        save_stub(stub_path,player_assignment)
 
         return player_assignment

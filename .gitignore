@@ -2,19 +2,26 @@
 /runs
 /models
 /Basketball-Players-17
-/basketball-court-detection-2-19
-/reloc2-1
 /results
 /Basketball-1
+/basketball-court-detection-2-19
+/reloc2-1/
 **/__pycache__/
 *.pyc
 /.env
-<<<<<<< HEAD
 *.pt
-=======
 /.neptune
 /input_videos/espn_basketball_vid_2025_11_08.mp4
 /input_videos/snippet_2025_11_08.mp4
 /output_videos/snippet_2025_11_08.avi
 /wandb
->>>>>>> main
+[\[]*
+CACHED
+exporting
+naming
+reading
+resolve
+transferring
+unpacking
+=
+*.containerfile
