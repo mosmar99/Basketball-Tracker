@@ -1,5 +1,5 @@
-# 1. Base Image
-FROM nvidia/cuda:12.8.1-cudnn-devel-ubuntu22.04
+# Base Image
+FROM python:3.12
 
 # Set Environment Variables
 ENV DEBIAN_FRONTEND=noninteractive
@@ -10,11 +10,8 @@ ENV TZ=Etc/UTC
 ENV PYTHONPATH=/app
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3.10 \
-    python3-pip \
     git \
-    libgl1-mesa-glx \
-    libglib2.0-0 \
+    libgl1 \
     && rm -rf /var/lib/apt/lists/*
 
 # Make python3 the default python
@@ -25,7 +22,7 @@ WORKDIR /app
 
 # Install Python Dependencies including Torch packages with cu128
 RUN python -m pip install --no-cache-dir --upgrade pip
-RUN python -m pip install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128
+RUN python -m pip install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu130
 
 # Copy ONLY the requirements.txt file first to leverage Docker layer caching
 COPY court_service/requirements.txt .

@@ -9,6 +9,8 @@ services:
       - "8002:8000"
     env_file:
       - .env
+    environment:
+      MINIO_ENDPOINT: "http://minio:9000"
     depends_on:
       - minio
     deploy:

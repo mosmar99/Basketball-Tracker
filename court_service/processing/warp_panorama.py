@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 
-def warp_image(image, points, final_size=(int(1280*2), int(1280*2*0.3))):
+def warp_image(image, points, final_size=(int(1280*2), int(685*2))):
     reference_pts = np.array([[0, 0],
                               [final_size[0], 0],
                               [final_size[0], final_size[1]],
