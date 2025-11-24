@@ -94,8 +94,8 @@ class TeamAssigner:
     def get_player_team(self,frame,player_bbox,player_id):
         
         history = list(self.player_team_cache_history[player_id])
-        if len(history) > self.history_len:
-            return self.get_team_from_history(player_id)
+        # if len(history) > self.history_len:
+        #     return self.get_team_from_history(player_id)
 
         player_color = self.get_player_color(frame,player_bbox)
         self.player_team_cache_history[player_id].append(player_color)
