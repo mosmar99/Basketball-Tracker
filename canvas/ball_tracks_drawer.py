@@ -12,6 +12,7 @@ class BallTrackDrawer():
             for _, track in ball_dict.items():
                 bbox = track["bbox"]
                 if bbox is None:
+                    output_video_frames.append(frame)
                     continue
                 output_frame = draw_triangle(frame, bbox, self.ball_pntr_color)
             output_video_frames.append(output_frame)

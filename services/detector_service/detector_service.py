@@ -45,13 +45,9 @@ async def track_video(file: UploadFile = File(...)):
 
         player_tracks = player_tracker.get_object_tracks(
             frames,
-            read_from_stub=False,
-            stub_path="stubs/player_track_stubs.pkl",
         )
         ball_tracks = ball_tracker.get_object_tracks(
             frames,
-            read_from_stub=False,
-            stub_path="stubs/ball_track_stubs.pkl",
         )
 
         ball_tracks = ball_tracker.remove_incorrect_detections(ball_tracks)

@@ -55,8 +55,6 @@ async def assign_teams(
     team_assignments = team_assigner.get_player_teams_over_frames(
         vid_frames=frames,
         player_tracks=player_tracks,
-        read_from_stub=False,
-        stub_path="stubs/player_assignment_stubs.pkl",
     )
 
     # Serialize
