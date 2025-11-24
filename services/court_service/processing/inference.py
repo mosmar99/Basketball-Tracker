@@ -27,9 +27,8 @@ class HomographyInference:
         mkpts0 = feats0['keypoints'][0][valid].cpu().numpy()
         mkpts1 = feats1['keypoints'][0][m0[valid]].cpu().numpy()
 
-        # --- Estimate homography ---
         if len(mkpts0) >= 4:
-            H, mask = cv2.findHomography(mkpts1, mkpts0, cv2.RANSAC, 200)
+            H, _ = cv2.findHomography(mkpts1, mkpts0, cv2.RANSAC, ransacReprojThreshold=200)
 
         return H
         

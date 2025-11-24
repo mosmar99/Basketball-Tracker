@@ -21,6 +21,9 @@ class TDOverlay:
         res = []
         for frame_idx in range(len(frames)):
             frame = frames[frame_idx].copy()
+            if H[frame_idx] == None:
+                res.append(frame)
+                continue
             players = player_tracks[frame_idx]
             player_teams = team_player_assignments[frame_idx]
             minimap_frame = self.minimap.copy()

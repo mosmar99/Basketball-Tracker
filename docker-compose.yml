@@ -8,9 +8,9 @@ services:
     ports:
       - "8001:8000"
     environment:
+      MINIO_ENDPOINT: "http://minio:9000"
       ROBOFLOW_API_KEY: ${ROBOFLOW_API_KEY}
       WNB_API_TOKEN: ${WNB_API_TOKEN}
-      MINIO_ENDPOINT: ${MINIO_ENDPOINT}
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
     deploy:
@@ -30,9 +30,9 @@ services:
     ports:
       - "8003:8000"
     environment:
+      MINIO_ENDPOINT: "http://minio:9000"
       ROBOFLOW_API_KEY: ${ROBOFLOW_API_KEY}
       WNB_API_TOKEN: ${WNB_API_TOKEN}
-      MINIO_ENDPOINT: ${MINIO_ENDPOINT}
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
     depends_on:
@@ -54,9 +54,9 @@ services:
     ports:
       - "8002:8000"
     environment:
+      MINIO_ENDPOINT: "http://minio:9000"
       ROBOFLOW_API_KEY: ${ROBOFLOW_API_KEY}
       WNB_API_TOKEN: ${WNB_API_TOKEN}
-      MINIO_ENDPOINT: ${MINIO_ENDPOINT}
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
     deploy:
@@ -82,9 +82,9 @@ services:
       DETECTOR_URL: "http://detector_service:8000/track"
       TEAM_ASSIGNER_URL: "http://team_assigner_service:8000/assign_teams"
       HOMOGRAPHY_URL: "http://court-service:8000/homographyvideo"
+      MINIO_ENDPOINT: "http://minio:9000"
       ROBOFLOW_API_KEY: ${ROBOFLOW_API_KEY}
       WNB_API_TOKEN: ${WNB_API_TOKEN}
-      MINIO_ENDPOINT: ${MINIO_ENDPOINT}
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
 

@@ -12,7 +12,7 @@ from .processing.inference import HomographyInference
 from .processing.warp_panorama import warp_image
 
 from .utils.video_io import load_frames
-from shared.storage import upload_video, s3_upload, download_to_temp
+from shared.storage import s3_upload, download_to_temp
 
 
 app = FastAPI(title="Homography Service")
