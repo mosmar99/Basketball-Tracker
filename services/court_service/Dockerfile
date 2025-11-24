@@ -1,5 +1,5 @@
 # Base Image
-FROM python:3.12
+FROM pytorch/pytorch:2.9.1-cuda13.0-cudnn9-runtime
 
 # Set Environment Variables
 ENV DEBIAN_FRONTEND=noninteractive
@@ -12,6 +12,9 @@ ENV PYTHONPATH=/app
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     libgl1 \
+    libglib2.0-0 \
+    libgl1-mesa-glx \
+    libgtk2.0-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Make python3 the default python
@@ -22,10 +25,10 @@ WORKDIR /app
 
 # Install Python Dependencies including Torch packages with cu128
 RUN python -m pip install --no-cache-dir --upgrade pip
-RUN python -m pip install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu130
+# RUN python -m pip install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu130
 
 # Copy ONLY the requirements.txt file first to leverage Docker layer caching
-COPY court_service/requirements.txt .
+COPY services/court_service/requirements.txt .
 RUN python -m pip install --no-cache-dir -r requirements.txt
 
 # Install Superpoint and LightGlue from Repository
@@ -40,7 +43,7 @@ print('Model downloads complete.')"
 
 # Copy the shared library and the specific service code into the container
 COPY shared/ ./shared/
-COPY court_service/ ./court_service/
+COPY services/court_service/ ./court_service/
 
 EXPOSE 8000
 

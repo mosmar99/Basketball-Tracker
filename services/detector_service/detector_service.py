@@ -30,11 +30,12 @@ def serialize_tracks(tracks):
 app = FastAPI()
 
 model_path = get_production_model_path()
-player_tracker = PlayerTracker(model_path=model_path)
-ball_tracker = BallTracker(model_path=model_path)
 
 @app.post("/track")
 async def track_video(file: UploadFile = File(...)):
+    player_tracker = PlayerTracker(model_path=model_path)
+    ball_tracker = BallTracker(model_path=model_path)
+
     with tempfile.TemporaryDirectory() as tmpdir:
         tmp_path = Path(tmpdir) / file.filename
         with tmp_path.open("wb") as f:
@@ -65,4 +66,4 @@ async def track_video(file: UploadFile = File(...)):
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8001)

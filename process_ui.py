@@ -4,7 +4,7 @@ import requests
 import tkinter as tk
 from tkinter import messagebox
 
-API_URL = "http://localhost:8002/process"
+API_URL = "http://localhost:8000/process"
 VIDEO_DIR = "./input_videos"
 
 

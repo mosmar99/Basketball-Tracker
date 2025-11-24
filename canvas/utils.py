@@ -15,7 +15,7 @@ def draw_ellipse(frame, bbox, color, track_id=None):
                      startAngle=-45, endAngle=235, 
                      color=color, thickness=2, lineType=cv2.LINE_4)
 
-    rectange_width, rectangle_height = 40, 20
+    rectange_width, rectangle_height = 80, 25
     x1_rect = x_center - rectange_width // 2    
     x2_rect = x_center + rectange_width // 2    
     y1_rect = (y2 - rectangle_height // 2) + 15
@@ -33,8 +33,8 @@ def draw_ellipse(frame, bbox, color, track_id=None):
             x1_text -= 10
 
         cv2.putText(frame,
-                    str(track_id),
-                    (int(x1_text), int(y1_rect+15)),
+                    f"id: {track_id}",
+                    (int(x1_text), int(y1_rect+18)),
                     cv2.FONT_HERSHEY_SIMPLEX,
                     0.6, (255,255,255), 2)
         
