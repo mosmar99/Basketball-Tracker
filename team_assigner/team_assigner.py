@@ -6,7 +6,6 @@ from ultralytics import SAM
 import numpy as np
 import random
 
-import random
 import os
 
 import sys 
