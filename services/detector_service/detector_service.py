@@ -5,19 +5,8 @@ import uvicorn
 import tempfile
 from pathlib import Path
 
-from tracking import PlayerTracker 
-from tracking import BallTracker 
-from tracking import get_production_model_path
-    
-import sys
-sys.path.append("../")
+from tracking import PlayerTracker, BallTracker, get_production_model_path
 from utils import read_video
-
-app = FastAPI()
-
-model_path = get_production_model_path()
-player_tracker = PlayerTracker(model_path=model_path)
-ball_tracker = BallTracker(model_path=model_path)
 
 def serialize_tracks(tracks):
     out = []
@@ -38,6 +27,11 @@ def serialize_tracks(tracks):
         out.append(frame_objs)
     return out
 
+app = FastAPI()
+
+model_path = get_production_model_path()
+player_tracker = PlayerTracker(model_path=model_path)
+ball_tracker = BallTracker(model_path=model_path)
 
 @app.post("/track")
 async def track_video(file: UploadFile = File(...)):

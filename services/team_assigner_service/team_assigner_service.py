@@ -6,15 +6,8 @@ import tempfile
 from pathlib import Path
 import json
 
-import sys
-sys.path.append("../")
-
 from utils import read_video
 from team_assigner import TeamAssigner
-
-
-app = FastAPI()
-
 
 def serialize_team_assignments(assignments):
     out = []
@@ -28,6 +21,7 @@ def serialize_team_assignments(assignments):
         out.append(frame_list)
     return out
 
+app = FastAPI()
 
 @app.post("/assign_teams")
 async def assign_teams(
