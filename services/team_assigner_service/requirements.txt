@@ -6,3 +6,4 @@ opencv-python-headless
 pillow
 transformers
 python-multipart
+ultralytics
