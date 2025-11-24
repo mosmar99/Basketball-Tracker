@@ -16,3 +16,6 @@ docker
 minio
 boto3
 wandb
+fastapi
+uvicorn
+python-multipart

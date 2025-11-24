@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+numpy
+opencv-python-headless
+requests
+python-multipart
+boto3
+botocore
+python-dotenv
