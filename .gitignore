@@ -9,12 +9,9 @@
 **/__pycache__/
 *.pyc
 /.env
-<<<<<<< HEAD
 *.pt
-=======
 /.neptune
 /input_videos/espn_basketball_vid_2025_11_08.mp4
 /input_videos/snippet_2025_11_08.mp4
 /output_videos/snippet_2025_11_08.avi
 /wandb
->>>>>>> main
