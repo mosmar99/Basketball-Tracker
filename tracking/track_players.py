@@ -3,6 +3,7 @@ import supervision as sv
 import sys
 from ultralytics import SAM
 import numpy as np
+import random
 
 sys.path.append("../")
 from utils import read_stub, save_stub
@@ -12,6 +13,11 @@ class PlayerTracker():
         self.model = YOLO(model_path)
         self.tracker = sv.ByteTrack()
         self.sam2 = SAM("sam2.1_b.pt")
+
+        self.max_players = 10
+        self.id_map = {}
+        self.available_ids = list(range(1, 11))
+        self.last_active_small_ids = set()  
 
     def detect_frames(self, vid_frames, batch_size=20, min_conf=0.5):
         detections = []
@@ -33,6 +39,25 @@ class PlayerTracker():
         
         return [x_min, y_min, x_max, y_max]
     
+    def remap_id(self, byte_id):
+        if byte_id in self.id_map:
+            return self.id_map[byte_id]
+
+        # fail safe
+        if not self.available_ids:
+            random_id = random.randint(11,100)
+            return random_id
+
+        small_id = self.available_ids.pop(0)
+        self.id_map[byte_id] = small_id
+        return small_id
+    
+    def release_id(self, byte_id):
+        if byte_id in self.id_map:
+            freed = self.id_map.pop(byte_id)
+            self.available_ids.append(freed)
+            self.available_ids.sort()
+
     def get_object_tracks(self, vid_frames, read_from_stub=False, stub_path=None):
         
         tracks = read_stub(read_from_stub, stub_path)
@@ -83,13 +108,30 @@ class PlayerTracker():
             detection_with_tracks = self.tracker.update_with_detections(detections_sv)
             tracks.append({})
 
+            current_ids = set()
+
             for frame_detection in detection_with_tracks:
                 bbox = frame_detection[0].tolist()
                 class_id = frame_detection[3]
                 track_id = frame_detection[4]
 
                 if class_id == class_names_inv["Player"]:
-                    tracks[frame_id][track_id] = {"bbox": bbox}
+                    small_id = self.remap_id(track_id)
+                    if small_id is None:
+                        continue
+
+                    current_ids.add(small_id)
+
+                if class_id == class_names_inv["Player"]:
+                    tracks[frame_id][small_id] = {"bbox": bbox}
+            
+            lost_ids = self.last_active_small_ids - current_ids
+            for lost_small_id in lost_ids:
+                byte_ids_to_release = [b for b, s in self.id_map.items() if s == lost_small_id]
+                for b in byte_ids_to_release:
+                    self.release_id(b)
+
+            self.last_active_small_ids = current_ids
 
         save_stub(stub_path, tracks)
         return tracks
