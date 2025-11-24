@@ -8,6 +8,7 @@ RUN apt-get update && apt-get install -y \
 
 COPY services/orchestrator_service/orchestrator_service.py /app/
 COPY services/orchestrator_service/api_utils.py /app/
+COPY services/orchestrator_service/imgs /app/imgs
 COPY services/orchestrator_service/requirements.txt /app/
 
 COPY tracking /app/tracking
@@ -19,5 +20,6 @@ COPY team_assigner /app/team_assigner
 
 RUN pip install --no-cache-dir -r requirements.txt
 
-EXPOSE 8002
-CMD ["python", "orchestrator_service.py"]
+EXPOSE 8000
+
+CMD ["uvicorn", "orchestrator_service:app", "--host", "0.0.0.0", "--port", "8000"]

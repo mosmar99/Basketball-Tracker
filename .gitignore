@@ -4,9 +4,12 @@
 /Basketball-Players-17
 /results
 /Basketball-1
+/basketball-court-detection-2-19
+/reloc2-1/
 **/__pycache__/
 *.pyc
 /.env
+*.pt
 /.neptune
 /input_videos/espn_basketball_vid_2025_11_08.mp4
 /input_videos/snippet_2025_11_08.mp4

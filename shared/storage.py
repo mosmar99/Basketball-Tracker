@@ -21,12 +21,29 @@ def get_s3():
         region_name="us-east-1",
     )
 
+def bucket_exists(s3, BUCKET_NAME):
+    buckets = [b["Name"] for b in s3.list_buckets()["Buckets"]]
+    if BUCKET_NAME not in buckets:
+        return False
+    else:
+        return True
+
 def upload_video(local_path, key, BUCKET_NAME="basketball"):
     s3 = get_s3()
 
-    # Ensure bucket exists
-    buckets = [b["Name"] for b in s3.list_buckets()["Buckets"]]
-    if BUCKET_NAME not in buckets:
+    if not bucket_exists(s3, BUCKET_NAME):
+        s3.create_bucket(Bucket=BUCKET_NAME)
+
+    print(f"Uploading {local_path} to bucket={BUCKET_NAME}, key={key}")
+    s3.upload_file(local_path, BUCKET_NAME, key)
+
+    print("Upload complete!")
+    return f"s3://{BUCKET_NAME}/{key}"
+
+def s3_upload(local_path, key, BUCKET_NAME="basketball"):
+    s3 = get_s3()
+
+    if not bucket_exists(s3, BUCKET_NAME):
         s3.create_bucket(Bucket=BUCKET_NAME)
 
     print(f"Uploading {local_path} to bucket={BUCKET_NAME}, key={key}")
@@ -38,9 +55,7 @@ def upload_video(local_path, key, BUCKET_NAME="basketball"):
 def delete_video(key, BUCKET_NAME="basketball"):
     s3 = get_s3()
 
-    # Ensure bucket exists
-    buckets = [b["Name"] for b in s3.list_buckets()["Buckets"]]
-    if BUCKET_NAME not in buckets:
+    if not bucket_exists(s3, BUCKET_NAME):
         print(f"Bucket {BUCKET_NAME} does not exist, nothing to delete.")
         return None
 
@@ -53,9 +68,7 @@ def delete_video(key, BUCKET_NAME="basketball"):
 def delete_bucket(BUCKET_NAME="basketball"):
     s3 = get_s3()
 
-    # Ensure bucket exists
-    buckets = [b["Name"] for b in s3.list_buckets()["Buckets"]]
-    if BUCKET_NAME not in buckets:
+    if not bucket_exists(s3, BUCKET_NAME):
         print(f"Bucket {BUCKET_NAME} does not exist, nothing to delete.")
         return None
 

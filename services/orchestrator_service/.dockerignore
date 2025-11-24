@@ -1,4 +1,5 @@
 *
+!*imgs/
 !*.py
 !requirements.txt
 !../../tracking

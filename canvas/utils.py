@@ -4,23 +4,31 @@ import sys
 sys.path.append("../")
 from utils import get_width_bbox, get_center_bbox
 
-def draw_ellipse(frame, bbox, color, track_id=None):
+def draw_square(frame, bbox, color, track_id=None):
     y2 = int(bbox[3])
     x_center, _ = get_center_bbox(bbox)
     width = get_width_bbox(bbox)
-    cv2.ellipse(frame, 
-                     center=(x_center, y2), 
-                     axes=(int(width), int(0.35*width)), 
-                     angle=0, 
-                     startAngle=-45, endAngle=235, 
-                     color=color, thickness=2, lineType=cv2.LINE_4)
+ 
+    sq_half = int(width * 0.7)
 
-    rectange_width, rectangle_height = 40, 20
-    x1_rect = x_center - rectange_width // 2    
-    x2_rect = x_center + rectange_width // 2    
+    front_y = y2 + 10
+    back_y  = y2 - 20
+ 
+    front_left  = (x_center - sq_half, front_y)
+    front_right = (x_center + sq_half, front_y)
+    back_left   = (x_center - sq_half, back_y)
+    back_right  = (x_center + sq_half, back_y)
+ 
+    cv2.line(frame, front_left, front_right, color, 2)
+    cv2.line(frame, front_left, back_left, color, 2)
+    cv2.line(frame, front_right, back_right, color, 2)
+
+    rectange_width, rectangle_height = 72, 26
+    x1_rect = x_center - rectange_width // 2
+    x2_rect = x_center + rectange_width // 2
     y1_rect = (y2 - rectangle_height // 2) + 15
     y2_rect = (y2 + rectangle_height // 2) + 15
-
+ 
     if track_id is not None:
         cv2.rectangle(frame,
                       (int(x1_rect),int(y1_rect)),
@@ -33,11 +41,11 @@ def draw_ellipse(frame, bbox, color, track_id=None):
             x1_text -= 10
 
         cv2.putText(frame,
-                    str(track_id),
-                    (int(x1_text), int(y1_rect+15)),
+                    f"id: {track_id}",
+                    (int(x1_text), int(y1_rect+18)),
                     cv2.FONT_HERSHEY_SIMPLEX,
                     0.6, (255,255,255), 2)
-        
+ 
     return frame
 
 def draw_triangle(frame, bbox, color):

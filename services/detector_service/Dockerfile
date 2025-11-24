@@ -1,4 +1,4 @@
-FROM python:3.12-slim
+FROM pytorch/pytorch:2.9.1-cuda13.0-cudnn9-runtime
 
 WORKDIR /app
 
@@ -20,4 +20,5 @@ COPY ball_acq /app/ball_acq
 RUN pip install --no-cache-dir -r requirements.txt
 
 EXPOSE 8000
-CMD ["python", "detector_service.py"]
+
+CMD ["uvicorn", "detector_service:app", "--host", "0.0.0.0", "--port", "8000"]

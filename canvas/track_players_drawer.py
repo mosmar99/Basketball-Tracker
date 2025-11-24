@@ -1,4 +1,4 @@
-from .utils import draw_ellipse, draw_triangle
+from .utils import draw_triangle, draw_square
 
 class PlayerTrackDrawer: # bgr
     def __init__(self,team_1_color=[83, 168, 52],team_2_color=[244, 133, 66]):
@@ -28,7 +28,7 @@ class PlayerTrackDrawer: # bgr
                 if track_id == id_player_with_ball:
                     frame = draw_triangle(frame, player["bbox"], (0, 0, 255))
 
-                frame = draw_ellipse(frame, player["bbox"],color, track_id)
+                frame = draw_square(frame, player["bbox"],color, track_id)
 
             output_video_frames.append(frame)
         

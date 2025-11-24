@@ -6,14 +6,37 @@ services:
       dockerfile: services/detector_service/Dockerfile
     container_name: detector_service
     ports:
-      - "8000:8000"
+      - "8001:8000"
     environment:
+      MINIO_ENDPOINT: "http://minio:9000"
       ROBOFLOW_API_KEY: ${ROBOFLOW_API_KEY}
-      NEPTUNE_API_TOKEN: ${NEPTUNE_API_TOKEN}
       WNB_API_TOKEN: ${WNB_API_TOKEN}
-      MINIO_ENDPOINT: ${MINIO_ENDPOINT}
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  court-service:
+    build:
+      context: .
+      dockerfile: services/court_service/Dockerfile
+    image: court-service
+    container_name: court-service
+    ports:
+      - "8003:8000"
+    environment:
+      MINIO_ENDPOINT: "http://minio:9000"
+      ROBOFLOW_API_KEY: ${ROBOFLOW_API_KEY}
+      WNB_API_TOKEN: ${WNB_API_TOKEN}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
+    depends_on:
+      - minio
     deploy:
       resources:
         reservations:
@@ -29,12 +52,11 @@ services:
       dockerfile: services/team_assigner_service/Dockerfile
     container_name: team_assigner_service
     ports:
-      - "8001:8001"
+      - "8002:8000"
     environment:
+      MINIO_ENDPOINT: "http://minio:9000"
       ROBOFLOW_API_KEY: ${ROBOFLOW_API_KEY}
-      NEPTUNE_API_TOKEN: ${NEPTUNE_API_TOKEN}
       WNB_API_TOKEN: ${WNB_API_TOKEN}
-      MINIO_ENDPOINT: ${MINIO_ENDPOINT}
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
     deploy:
@@ -52,16 +74,31 @@ services:
       dockerfile: services/orchestrator_service/Dockerfile
     container_name: orchestrator_service
     ports:
-      - "8002:8002"
+      - "8000:8000"
     depends_on:
       - detector_service
       - team_assigner_service
     environment:
       DETECTOR_URL: "http://detector_service:8000/track"
-      TEAM_ASSIGNER_URL: "http://team_assigner_service:8001/assign_teams"
+      TEAM_ASSIGNER_URL: "http://team_assigner_service:8000/assign_teams"
+      HOMOGRAPHY_URL: "http://court-service:8000/homographyvideo"
+      MINIO_ENDPOINT: "http://minio:9000"
       ROBOFLOW_API_KEY: ${ROBOFLOW_API_KEY}
-      NEPTUNE_API_TOKEN: ${NEPTUNE_API_TOKEN}
       WNB_API_TOKEN: ${WNB_API_TOKEN}
-      MINIO_ENDPOINT: ${MINIO_ENDPOINT}
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
+
+  minio:
+    image: minio/minio
+    container_name: minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    env_file:
+      - .env
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio-data:/data
+
+volumes:
+  minio-data:

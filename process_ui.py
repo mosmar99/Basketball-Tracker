@@ -3,10 +3,11 @@ import threading
 import requests
 import tkinter as tk
 from tkinter import messagebox
+from shared.storage import upload_video
 
-API_URL = "http://localhost:8002/process"
+API_URL = "http://localhost:8000/process"
 VIDEO_DIR = "./input_videos"
-
+BUCKET_RAW = "basketball-raw-videos"
 
 def send_request(selected_video, status_label):
     """Runs inside a thread so UI does not freeze."""
@@ -25,6 +26,11 @@ def send_request(selected_video, status_label):
         status_label.config(text="Error!", fg="red")
         messagebox.showerror("Exception", str(e))
 
+def upload_raw_vid(vid_name):
+    local_path = f"{VIDEO_DIR}/{vid_name}.mp4"
+    key = f"{vid_name}.mp4"
+    uri = upload_video(local_path, key, BUCKET_NAME=BUCKET_RAW)
+    print("Uploaded to:", uri)
 
 def start_processing(listbox, status_label):
     try:
@@ -34,6 +40,8 @@ def start_processing(listbox, status_label):
             return
 
         video_name = listbox.get(index[0]).replace(".mp4", "")
+
+        upload_raw_vid(video_name)
 
         # Run network call in background
         threading.Thread(
