@@ -6,5 +6,4 @@ opencv-python-headless
 pillow
 transformers
 python-multipart
-random
 ultralytics
