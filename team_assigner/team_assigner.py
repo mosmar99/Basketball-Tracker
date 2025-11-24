@@ -28,7 +28,6 @@ class TeamAssigner:
                  ):
         self.team_colors = {}
         self.history_len = history_len
-        self.player_team_cache = {}
         self.player_team_cache_history = defaultdict(lambda: deque(maxlen=history_len))
 
         self.crop_factor = crop_factor
@@ -100,9 +99,6 @@ class TeamAssigner:
         return 1 if most_freq == self.team_A else 2
 
     def get_player_team(self,frame,player_bbox,player_id):
-
-        if player_id in self.player_team_cache:
-            return self.player_team_cache[player_id]
         
         history = list(self.player_team_cache_history[player_id])
         if len(history) > self.history_len:
@@ -112,7 +108,6 @@ class TeamAssigner:
         self.player_team_cache_history[player_id].append(player_color)
         team_id = self.get_team_from_history(player_id)
         print(player_id)
-        self.player_team_cache[player_id] = team_id
         return team_id
     
     def get_player_teams_over_frames(self, vid_frames, player_tracks, read_from_stub=False, stub_path=None):
@@ -126,9 +121,6 @@ class TeamAssigner:
         for frame_id, player_track in enumerate(player_tracks):        
             player_assignment.append({})
             
-            # SAFETY: clear cache in case of misclassifications
-            if frame_id % 25 == 0:
-                self.player_team_cache = {}
             
             for player_id, track in player_track.items():
                 team = self.get_player_team(vid_frames[frame_id], track['bbox'], player_id)
