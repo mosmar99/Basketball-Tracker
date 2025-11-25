@@ -10,14 +10,14 @@ Concretely, our aim is to automatically detect and track player as well as ball 
 ## General System Outline
 
 ### Minimum capabilities:
-- Top-down Player court position
+- Top-down Player court position (In MVP)
 - Top-down Ball court position
 - Statistics
-  - Ball possession (team/individual)
+  - Ball possession (team/individual) (In MVP)
   - Passes/Interceptions (team/individual)
 - Court spatial analysis
   - Ball position heatmap
-- Vizualize insights
+- Vizualize insights  (Partially in MVP (Video))
 
 ### Nice to have:
 - Statistics
@@ -62,10 +62,17 @@ The finalized product is expected to be able to derive insights from various kin
 
 For object detection of ball, player and referee the following dataset is used, [basketball players](https://universe.roboflow.com/workspace-5ujvu/basketball-players-fy4c2-vfsuv). The dataset contains 320 annotated images with classes: Ball, Player, Referee, Clock, Hoop, Overlay and Scoreboard. The dataset can be used to fine tune a object detection model to ignore the spectators.
 
-Initial experiment tracking was implemented using neptune but is currently in the progress of migrating to weights and biases
+For court homography a detailed writeup on Keypoint pose detetion for court is found in issue [#11](/../../issues/11) the previously specified dataset is not used (~~[a dataset with court keypoints](https://universe.roboflow.com/fyp-3bwmg/reloc2-den7l)~~). The issue also contains details on the current model and approach. The base of the current implementation is to build a panorama from video. This panorama image is used to create a reference image for keypoint extraction and matching with SuperPoint and LightGlue respectively.
 
+Initial experiment tracking was implemented using neptune. This is currently in the progress of being migrated to weights and biases (wandb) which also provides a model registry. Progress and considerations are detailed in issue [#13](/../../issues/13). Focus has been put on getting the application to a runnable state using docker, as such model training and improvement has been put on hold during the final stages of the sprint. Since no new models have been finetuned since migration to wandb started, no experiment logs currently exist in wandb, however artifacts from neptune do. The model is kept as an artifact and linked to the model registry with tag @production. The dataset is kept in artifact. This is to facilitate running of the application.
 
-For court homography a detailed writeup on Keypoint pose detetion for court is found in issue #11 ~~[a dataset with court keypoints](https://universe.roboflow.com/fyp-3bwmg/reloc2-den7l)~~ exists (Not used). The issue also contains details on the current model and approach. The base of the current implementation is to build a panorama from video. This panorama image is used to create a reference image for keypoint extraction and matching with SuperPoint and LightGlue respectively.
+For reference, experiment tracking in neptune is shown bellow.
+<img width="1908" height="551" alt="image (4)" src="https://github.com/user-attachments/assets/b2e14f9e-da37-489a-a05b-25f6c34289ea" />
+
+For reference, model registry and current progress in wandb is shown bellow.
+<img width="1140" height="535" alt="image (1)" src="https://github.com/user-attachments/assets/763472b2-2e37-4c95-877b-b0752f68efaa" />
+<img width="1259" height="530" alt="image (2)" src="https://github.com/user-attachments/assets/1e3ddfe5-01a2-459e-95f7-59a5d009820d" />
+<img width="1919" height="688" alt="image (3)" src="https://github.com/user-attachments/assets/2ad7f24b-71fc-4383-8504-0be2195bdc51" />
 
 ## State as of sprint 2 (MVP)
 This release provides a dockerized application delivered as a Docker Compose stack consisting of five services. 
@@ -84,11 +91,11 @@ They simply specify the video to be processed, which triggers the process pipeli
 The orchestrator manages the whole processing pipeline, sending and recieving API (through FastAPI) calls from services. 
 
 **A more comprehensive breakdown**: 
-1. The finetuned production model for player and ball detections is found on the cloud, specifically in a model registry within weights and biases. It is amongst other reasons a cheaper option than self hosting, check #13 for a more detailed breakdown. 
+1. The finetuned production model for player and ball detections is found on the cloud, specifically in a model registry within weights and biases. It is amongst other reasons a cheaper option than self hosting, check [#13](/../../issues/13) for a more detailed breakdown. 
 2. Subsequently the orchestrator sends the video path to the tracks detector service which returns player and ball tracks. These contain player and ball bounding boxes localizations for each player and ball object (identified by ByteTracker) across all frames.  
-3. Additionally, the orchestrator sends the player tracks and the video path (note that the reference to the video is passed around to minize communication overhead) to the team assigner service. The FashionCLIP by Patrick John et al. is prompted by team jersey colors for each team and takes in a clipped version of the player bounding box and returns team group, 1 or 2. Subsequently, we implemented majority voting (for further details #12) over a set of frames (specifically, over 50 frames) to set the final team belonging for each object id over all frames. The result is returned to the orchestrator. Considerations were made with SAM2 without noticable improvements (see #19).
+3. Additionally, the orchestrator sends the player tracks and the video path (note that the reference to the video is passed around to minize communication overhead) to the team assigner service. The FashionCLIP by Patrick John et al. is prompted by team jersey colors for each team and takes in a clipped version of the player bounding box and returns team group, 1 or 2. Subsequently, we implemented majority voting (for further details [#12](/../../issues/12)) over a set of frames (specifically, over 50 frames) to set the final team belonging for each object id over all frames. The result is returned to the orchestrator. Considerations were made with SAM2 without noticable improvements (see [#19](/../../pull/19)).
 4. Ball acquisition run on the orchestrator service since its rule based and lightweight (i.e., does not justify a seperate service instance). It primarly utilizes to rules to check for ball position, the first being IoU and the second is based on closest distance between ball and players.
-5. Thereafter, the homography matrices are calculated in the court service, which are utilized to yield accurate frame by frame updates on a minimap. The service provides homographies to reproject player coordinates for a top down view. The operation is currently ony possible on video_1.mp4 due to hardcoded reference. API is detailed in the court_service README which provides API endpoints for creating reference images. They need to be implemented into the UI to enable the option of creating reference images from any video. Detailed description of operations and previous work is found in issue #11.
+5. Thereafter, the homography matrices are calculated in the court service, which are utilized to yield accurate frame by frame updates on a minimap. The service provides homographies to reproject player coordinates for a top down view. The operation is currently ony possible on video_1.mp4 due to hardcoded reference. API is detailed in the court_service README which provides API endpoints for creating reference images. They need to be implemented into the UI to enable the option of creating reference images from any video. Detailed description of operations and previous work is found in issue [#11](/../../issues/11).
 7. Lastly, within the orchestrator service, all yielded components are as an overlay drawn and depicted on the original inputted video.
 
 The requirements file specify pytorch and NVIDIA GPU execution of models. The final product is visualized in a video below. 
