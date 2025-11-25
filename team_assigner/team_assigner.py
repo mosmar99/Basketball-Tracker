@@ -17,7 +17,8 @@ class TeamAssigner:
                  team_B= "DARK-BLUE shirt",
                  history_len = 50,
                  crop_factor = 0.375,
-                 save_imgs = False
+                 save_imgs = False,
+                 crop = False
                  ):
         self.team_colors = {}
         self.history_len = history_len
@@ -25,10 +26,10 @@ class TeamAssigner:
 
         self.crop_factor = crop_factor
         self.save_imgs = save_imgs
+        self.crop = crop
     
         self.team_A = team_A
         self.team_B = team_B
-        self.sam2 = SAM("sam2.1_b.pt")
 
     def load_model(self):
         self.model = CLIPModel.from_pretrained("patrickjohncyh/fashion-clip")
@@ -47,30 +48,20 @@ class TeamAssigner:
     def get_player_color(self,frame,bbox):
         image = frame[int(bbox[1]):int(bbox[3]), int(bbox[0]):int(bbox[2])]
 
-        results_list = self.sam2(image, bboxes=[0, 0, int(bbox[2])-int(bbox[0]), int(bbox[3])-int(bbox[1])])
-        masks_obj = results_list[0].masks  # Masks object
+        pil_image = Image.fromarray(image) # pytorch expects this format
 
-        if masks_obj is not None and len(masks_obj) > 0:
-            mask_tensor = masks_obj.data  # torch.Tensor of shape (1, H, W)
-            mask_numpy = mask_tensor[0].cpu().numpy().astype(np.uint8)
-
-        blurred = cv2.GaussianBlur(image, (21,21), 0) 
-
-        masked_img = np.where(mask_numpy[..., None] == 1, image, blurred)
-        rgb_image = cv2.cvtColor(masked_img, cv2.COLOR_BGR2RGB) # blurred img
-        pil_image = Image.fromarray(rgb_image) # pytorch expects this format
-
-        # Crop the img around the center.
-        cropped_pil_image = self.crop_img(pil_image)
+        if self.crop:
+            # Crop the img around the center.
+            pil_image = self.crop_img(pil_image)
 
         if self.save_imgs:
             r = random.randint(1, 1000000)
             filename = f"masked_{r}.png"
-            cropped_pil_image.save(os.path.join("imgs/masked", filename))
+            pil_image.save(os.path.join("imgs/masked", filename))
 
         team_classes = [self.team_A, self.team_B]
 
-        inputs = self.processor(text=team_classes, images=cropped_pil_image, return_tensors="pt", padding=True)
+        inputs = self.processor(text=team_classes, images=pil_image, return_tensors="pt", padding=True)
 
         outputs = self.model(**inputs)
         logits_per_image = outputs.logits_per_image
@@ -93,10 +84,6 @@ class TeamAssigner:
 
     def get_player_team(self,frame,player_bbox,player_id):
         
-        history = list(self.player_team_cache_history[player_id])
-        # if len(history) > self.history_len:
-        #     return self.get_team_from_history(player_id)
-
         player_color = self.get_player_color(frame,player_bbox)
         self.player_team_cache_history[player_id].append(player_color)
         team_id = self.get_team_from_history(player_id)
