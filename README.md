@@ -32,20 +32,11 @@ Concretely, our aim is to automatically detect and track player as well as ball 
 
 ### Intended tools:
 - Object Detection (Ultralytics YOLOv11/SAM2 or other suitable)
-- Experiment and Model Tracking (Neptune)
-![](imgs/readme/neptune.png)
+- Experiment and Model Tracking (Neptune -> wandb)
+- Model Registry (Neptune -> wandb)
 - Id Tracking (Supervision ByteTrack or BoT-SORT)
-- Homography (OpenCV SIFT or other suitable keypoint detection model)
+- Homography (OpenCV SIFT, and SuperPoint + LightGlue)
 - Containerization (Docker)
-
-Create an image:
-
-    docker build -f Dockerfile.dev -t basketball-tracker-dev .
-
-Run image in a containerized developement environment:
-
-    # docker run --rm -it --gpus all   -v $(pwd):/app -w /app   basketball-tracker-dev   python3 FILE_NAME.py
-
 - Infrastructure Management (Terraform)
 - Database (MongoDB for structured data storage)
 
@@ -66,10 +57,43 @@ The Object Detection task consists of two primary objectives, image recognition 
 
 The precice original implementation of YOLO is detailed in the [ORIGINAL PAPER](https://arxiv.org/pdf/1506.02640). The image is first resized into a shape of 448x448, then it goes through subsequent convolutional layers. The activation function used throughout the network is the ReLU (recitified linear unit), except in the final layer, which uses a linear activation function. In addition, regularization techniques are employed, e.g., dropout and batch normalization to prevent model overfitting.
 
-## Datasets
+## Experiment and Dataset
 The finalized product is expected to be able to derive insights from various kinds of input videos. Although, we put some constraints on it. NBA Broadcast style video is the expected input video format. The input video format is expected to be *.mp4*.
 
-For object detection of ball, player and referee the following dataset is used, [basketball players](https://universe.roboflow.com/workspace-5ujvu/basketball-players-fy4c2-vfsuv). The dataset contains 320 annotated images with classes: Ball, Player, Referee, Clock, Hoop, Overlay and Scoreboard. The dataset can be used to fine tune a object detection model to ignore the spectators. Additionally, if SIFT does not work for court homography, [a dataset with court keypoints](https://universe.roboflow.com/fyp-3bwmg/reloc2-den7l) exists. This enables us to train a model to detect keypoints for perspective transform calculation.
+For object detection of ball, player and referee the following dataset is used, [basketball players](https://universe.roboflow.com/workspace-5ujvu/basketball-players-fy4c2-vfsuv). The dataset contains 320 annotated images with classes: Ball, Player, Referee, Clock, Hoop, Overlay and Scoreboard. The dataset can be used to fine tune a object detection model to ignore the spectators.
+
+Initial experiment tracking was implemented using neptune but is currently in the progress of migrating to weights and biases
+
+
+For court homography a detailed writeup on Keypoint pose detetion for court is found in issue #11 ~~[a dataset with court keypoints](https://universe.roboflow.com/fyp-3bwmg/reloc2-den7l)~~ exists (Not used). The issue also contains details on the current model and approach. The base of the current implementation is to build a panorama from video. This panorama image is used to create a reference image for keypoint extraction and matching with SuperPoint and LightGlue respectively.
+
+## State as of sprint 2 (MVP)
+This release provides a dockerized application delivered as a Docker Compose stack consisting of five services. 
+Four of these: _detector_service, team_assigner_service, court-service, and orchestrator_service_, are custom-built components developed by us, each with its own Dockerfile and image created during the build process. The fifth service, minio, is an external dependency pulled from the official minio/minio image on Docker Hub and included as part of the stack to provide object storage. The Compose stack orchestrates all five containers into a fully integrated application environment.
+
+<img width="540" height="514" alt="bt_architecture" src="https://github.com/user-attachments/assets/4a7830ca-74ed-4626-8d1e-021597e4a74c" />
+
+For the MVP, the client needs first install Docker and then to run "docker-compose up --build" in the WORKDIR to run all the images in containers. The client specifies local folder with videos. Then after running `python process_ui.py` in WORKDIR, is prompted with the UI (see image below).
+
+<img width="410" height="432" alt="image" src="https://github.com/user-attachments/assets/c1ca2421-2396-4918-b3ef-1845d8224544" />
+
+They simply specify the video to be processed, which triggers the process pipeline and is signaled by "Processing.."  keywords. When processing it completed the UI shows "Done.". Both the raw and processed videos are individually uploaded to a S3 minIO container, in individual buckets. There are unit tests in the `tests` folder to ensure that bucket video upload, video deletion and bucket deletion functions correctly.
+
+<img width="928" height="316" alt="image" src="https://github.com/user-attachments/assets/c1e87f7d-376c-4001-b082-b93d1121f5d0" />
+
+The orchestrator manages the whole processing pipeline, sending and recieving API (through FastAPI) calls from services. 
+
+**A more comprehensive breakdown**: 
+1. The finetuned production model for player and ball detections is found on the cloud, specifically in a model registry within weights and biases. It is amongst other reasons a cheaper option than self hosting, check #13 for a more detailed breakdown. 
+2. Subsequently the orchestrator sends the video path to the tracks detector service which returns player and ball tracks. These contain player and ball bounding boxes localizations for each player and ball object (identified by ByteTracker) across all frames.  
+3. Additionally, the orchestrator sends the player tracks and the video path (note that the reference to the video is passed around to minize communication overhead) to the team assigner service. The FashionCLIP by Patrick John et al. is prompted by team jersey colors for each team and takes in a clipped version of the player bounding box and returns team group, 1 or 2. Subsequently, we implemented majority voting (for further details #12) over a set of frames (specifically, over 50 frames) to set the final team belonging for each object id over all frames. The result is returned to the orchestrator. Considerations were made with SAM2 without noticable improvements (see #19).
+4. Ball acquisition run on the orchestrator service since its rule based and lightweight (i.e., does not justify a seperate service instance). It primarly utilizes to rules to check for ball position, the first being IoU and the second is based on closest distance between ball and players.
+5. Thereafter, the homography matrices are calculated in the court service, which are utilized to yield accurate frame by frame updates on a minimap. The service provides homographies to reproject player coordinates for a top down view. The operation is currently ony possible on video_1.mp4 due to hardcoded reference. API is detailed in the court_service README which provides API endpoints for creating reference images. They need to be implemented into the UI to enable the option of creating reference images from any video. Detailed description of operations and previous work is found in issue #11.
+7. Lastly, within the orchestrator service, all yielded components are as an overlay drawn and depicted on the original inputted video.
+
+The requirements file specify pytorch and NVIDIA GPU execution of models. The final product is visualized in a video below. 
+
+https://github.com/user-attachments/assets/9a22c280-0b12-4f03-942b-536bd8b8f958
 
 ## Authors (Equal Contribution)
 1. Mahmut Osmanovic
