@@ -2,14 +2,35 @@ import os
 import threading
 import requests
 import tkinter as tk
+import subprocess
 from tkinter import messagebox
 from shared.storage import upload_video
 
 API_URL = "http://localhost:8000/process"
+STATS_URL = "http://localhost:8004/video_statistics"
 VIDEO_DIR = "./input_videos"
 BUCKET_RAW = "basketball-raw-videos"
 
-def send_request(selected_video, status_label):
+
+def safe_open_url(url: str):
+    try:
+        if "WSL_DISTRO_NAME" in os.environ:
+            win_path = url.replace("&", "^&")
+            subprocess.Popen(["powershell.exe", "-Command", f"start '{win_path}'"])
+            return
+    except Exception:
+        pass
+
+    try:
+        subprocess.Popen(["xdg-open", url])
+        return
+    except Exception:
+        pass
+
+    import webbrowser
+    webbrowser.open(url)
+
+def send_request(selected_video, status_label, stats_button):
     """Runs inside a thread so UI does not freeze."""
     try:
         status_label.config(text="Processing...", fg="orange")
@@ -18,6 +39,7 @@ def send_request(selected_video, status_label):
 
         if resp.status_code == 200:
             status_label.config(text="Done!", fg="green")
+            stats_button.config(state="normal")  # Enable button
         else:
             status_label.config(text="Error!", fg="red")
             messagebox.showerror("Error", f"Server returned {resp.status_code}")
@@ -26,15 +48,22 @@ def send_request(selected_video, status_label):
         status_label.config(text="Error!", fg="red")
         messagebox.showerror("Exception", str(e))
 
-import webbrowser
 
 def upload_raw_vid(vid_name):
     local_path = f"{VIDEO_DIR}/{vid_name}.mp4"
     key = f"{vid_name}.mp4"
+
     uri = upload_video(local_path, key, BUCKET_NAME=BUCKET_RAW)
     print("Uploaded to:", uri)
 
-def start_processing(listbox, status_label):
+
+def open_stats_page(video_name):
+    url = f"{STATS_URL}/{video_name}"
+    print("Opening:", url)
+    safe_open_url(url)
+
+
+def start_processing(listbox, status_label, stats_button):
     try:
         index = listbox.curselection()
         if not index:
@@ -45,10 +74,15 @@ def start_processing(listbox, status_label):
 
         upload_raw_vid(video_name)
 
-        # Run network call in background
+        stats_button.config(state="disabled")
+
         threading.Thread(
-            target=send_request, args=(video_name, status_label), daemon=True
+            target=send_request,
+            args=(video_name, status_label, stats_button),
+            daemon=True
         ).start()
+
+        stats_button.config(command=lambda vn=video_name: open_stats_page(vn))
 
     except Exception as e:
         messagebox.showerror("Error", str(e))
@@ -57,35 +91,43 @@ def start_processing(listbox, status_label):
 def main():
     root = tk.Tk()
     root.title("Basketball Video Processor")
-    root.geometry("400x400")
+    root.geometry("420x450")
 
-    # Title
     tk.Label(root, text="Select a video to process:", font=("Arial", 14)).pack(pady=10)
 
-    # Listbox of videos
     listbox = tk.Listbox(root, width=40, height=10, font=("Arial", 12))
     listbox.pack(pady=5)
 
-    # Load video names
+    # Load videos
     if not os.path.exists(VIDEO_DIR):
         os.makedirs(VIDEO_DIR)
 
-    videos = sorted([f for f in os.listdir(VIDEO_DIR) if f.endswith(".mp4")])
-    for v in videos:
-        listbox.insert(tk.END, v)
+    files = sorted([f for f in os.listdir(VIDEO_DIR) if f.endswith(".mp4")])
+    for f in files:
+        listbox.insert(tk.END, f)
 
-    # OK button
-    tk.Button(
+    # Process Button
+    process_btn = tk.Button(
         root,
-        text="OK",
+        text="Process",
         font=("Arial", 12),
-        command=lambda: start_processing(listbox, status_label),
-        width=10,
-    ).pack(pady=10)
+        command=lambda: start_processing(listbox, status_label, stats_button),
+        width=12,
+    )
+    process_btn.pack(pady=10)
 
-    # Status label
     status_label = tk.Label(root, text="", font=("Arial", 12))
     status_label.pack(pady=5)
+
+    # Stats Button (disabled until processing is done)
+    stats_button = tk.Button(
+        root,
+        text="Open Statistics Page",
+        font=("Arial", 12),
+        state="disabled",
+        width=20,
+    )
+    stats_button.pack(pady=10)
 
     root.mainloop()
 
