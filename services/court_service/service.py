@@ -14,7 +14,6 @@ from .processing.warp_panorama import warp_image
 from .utils.video_io import load_frames
 from shared.storage import s3_upload, download_to_temp
 
-
 app = FastAPI(title="Homography Service")
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
@@ -23,9 +22,10 @@ homography = HomographyInference(DEVICE)
 
 @app.post("/stitch")
 async def stitch_panorama_ep(video: UploadFile = File(...)):
-    job_id = str(uuid.uuid4())
-    tmp_video = f"/tmp/{job_id}.mp4"
-    tmp_output_img = f"/tmp/{job_id}.jpg"
+    # job_id = str(uuid.uuid4())
+    filename_img = f"{video.filename.split('.')[0]}.jpg"
+    tmp_video = f"/tmp/{video.filename}"
+    tmp_output_img = f"/tmp/{filename_img}"
 
     with open(tmp_video, "wb") as f:
         f.write(await video.read())
@@ -35,14 +35,14 @@ async def stitch_panorama_ep(video: UploadFile = File(...)):
     panorama = stitcher.align_and_stitch(frames)
     cv2.imwrite(tmp_output_img, panorama)
 
-    s3_uri = s3_upload(tmp_output_img, f"{job_id}.jpg", BUCKET_NAME="basketball-panorama")
+    s3_uri = s3_upload(tmp_output_img, filename_img, BUCKET_NAME="basketball-panorama")
 
     h, w = panorama.shape[:2]
 
     os.remove(tmp_video)
 
     return {
-        "job_id": job_id,
+        "job_id": filename_img,
         "panorama_uri": s3_uri,
         "width": w,
         "height": h,
@@ -51,7 +51,7 @@ async def stitch_panorama_ep(video: UploadFile = File(...)):
 
 @app.post("/warp_panorama")
 async def warp_panorama_ep(panorama_uri: str = Form(...), points_json_str: str = Form(...)):
-    job_id = str(uuid.uuid4())
+    # job_id = str(uuid.uuid4())
     points_data = json.loads(points_json_str)
 
     source_points = np.array(points_data, dtype=np.float32)
@@ -65,9 +65,9 @@ async def warp_panorama_ep(panorama_uri: str = Form(...), points_json_str: str =
 
     warped_img = warp_image(panorama_img, source_points)
     
-    tmp_warped_path = f"/tmp/{job_id}_warped.jpg"
+    tmp_warped_path = f"/tmp/{key}"
     cv2.imwrite(tmp_warped_path, warped_img)
-    warped_s3_uri = s3_upload(tmp_warped_path, f"{job_id}.jpg", BUCKET_NAME="basketball-panorama-warp")
+    warped_s3_uri = s3_upload(tmp_warped_path, key, BUCKET_NAME="basketball-panorama-warp")
 
     h, w = warped_img.shape[:2]
 
@@ -75,7 +75,7 @@ async def warp_panorama_ep(panorama_uri: str = Form(...), points_json_str: str =
     os.remove(tmp_warped_path)
 
     return {
-        "job_id": job_id,
+        "job_id": key,
         "warped_image_uri": warped_s3_uri,
         "width": w,
         "height": h,
@@ -103,7 +103,7 @@ async def estimate_homography_ep(frame: UploadFile = File(...), reference: Uploa
     }
 
 @app.post("/homographyvideo")
-async def stitch_panorama_ep(video: UploadFile = File(...), reference: UploadFile = File(...)):
+async def stitch_panorama_ep(video: UploadFile = File(...), reference: UploadFile = Form(...)):
     job_id = str(uuid.uuid4())
     tmp_video = f"/tmp/{job_id}.mp4"
 
