@@ -67,6 +67,21 @@ services:
               count: all
               capabilities: [gpu]
 
+  video_viewer_service:
+    build:
+      context: .
+      dockerfile: services/video_viewer_service/Dockerfile
+    image: basketball-video-viewer
+    container_name: video_viewer_service
+    ports:
+      - "8004:8000"
+    environment:
+      MINIO_ENDPOINT: "http://minio:9000"
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
+    depends_on:
+      - minio
+
   orchestrator_service:
     image: basketball-orchestrator
     build:

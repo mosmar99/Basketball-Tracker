@@ -1,3 +1,4 @@
+import os
 import uvicorn
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
@@ -72,7 +73,12 @@ async def process_video(video_name: str):
     out_path = f"output_videos/{video_name}.mp4"
     save_video(output_vid_frames, out_path)
 
-    upload_video(local_path=out_path, key=key, BUCKET_NAME="basketball-processed")
+    fixed_path = f"output_videos/{video_name}_fixed.mp4"
+    os.system(
+        f"ffmpeg -y -i {out_path} -vcodec libx264 -preset fast -movflags +faststart {fixed_path}"
+    )
+
+    upload_video(local_path=fixed_path, key=key, BUCKET_NAME="basketball-processed")
 
     return JSONResponse({
         "status": "completed",

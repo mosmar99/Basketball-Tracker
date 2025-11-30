@@ -26,6 +26,8 @@ def send_request(selected_video, status_label):
         status_label.config(text="Error!", fg="red")
         messagebox.showerror("Exception", str(e))
 
+import webbrowser
+
 def upload_raw_vid(vid_name):
     local_path = f"{VIDEO_DIR}/{vid_name}.mp4"
     key = f"{vid_name}.mp4"
