@@ -23,6 +23,11 @@ def serialize_team_assignments(assignments):
 
 app = FastAPI()
 
+team_assigner = TeamAssigner(
+        team_A="WHITE shirt",
+        team_B="DARK BLUE shirt"
+    )
+
 @app.post("/assign_teams")
 async def assign_teams(
     file: UploadFile = File(...),
@@ -46,16 +51,13 @@ async def assign_teams(
     # Read video frames
     frames = read_video(str(tmp_video_path))
 
-    # Run team assigner
-    team_assigner = TeamAssigner(
-        team_A="WHITE shirt",
-        team_B="DARK BLUE shirt"
-    )
-
     team_assignments = team_assigner.get_player_teams_over_frames(
         vid_frames=frames,
         player_tracks=player_tracks,
     )
+    for key, time in team_assigner.times.items():
+        print(f"{key}: {time}")
+    print(team_assigner.device)
 
     # Serialize
     payload = {

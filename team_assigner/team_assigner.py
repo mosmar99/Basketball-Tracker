@@ -5,6 +5,8 @@ from transformers import CLIPProcessor, CLIPModel
 from ultralytics import SAM
 import numpy as np
 import random
+from time import time
+import torch
 
 import os
 
@@ -30,9 +32,12 @@ class TeamAssigner:
     
         self.team_A = team_A
         self.team_B = team_B
+        
+        self.load_model()
 
     def load_model(self):
-        self.model = CLIPModel.from_pretrained("patrickjohncyh/fashion-clip")
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.model = CLIPModel.from_pretrained("patrickjohncyh/fashion-clip").to(self.device)
         self.processor = CLIPProcessor.from_pretrained("patrickjohncyh/fashion-clip")
 
     def crop_img(self, pil_image):
@@ -48,10 +53,9 @@ class TeamAssigner:
     def get_player_color(self,frame,bbox):
         image = frame[int(bbox[1]):int(bbox[3]), int(bbox[0]):int(bbox[2])]
 
-        pil_image = Image.fromarray(image) # pytorch expects this format
+        pil_image = Image.fromarray(image)
 
         if self.crop:
-            # Crop the img around the center.
             pil_image = self.crop_img(pil_image)
 
         if self.save_imgs:
@@ -62,6 +66,7 @@ class TeamAssigner:
         team_classes = [self.team_A, self.team_B]
 
         inputs = self.processor(text=team_classes, images=pil_image, return_tensors="pt", padding=True)
+        inputs = {k: v.to(self.device) for k, v in inputs.items()}
 
         outputs = self.model(**inputs)
         logits_per_image = outputs.logits_per_image
@@ -83,22 +88,69 @@ class TeamAssigner:
         return 1 if most_freq == self.team_A else 2
 
     def get_player_team(self,frame,player_bbox,player_id):
-        
+        start = time()
         player_color = self.get_player_color(frame,player_bbox)
         self.player_team_cache_history[player_id].append(player_color)
         team_id = self.get_team_from_history(player_id)
         print(player_id)
         return team_id
+    
+    def get_player_color_batch(self, pil_images):
+        team_classes = [self.team_A, self.team_B]
+
+        inputs = self.processor(
+            text=team_classes,
+            images=pil_images,
+            return_tensors="pt",
+            padding=True
+        )
+
+        inputs = {k: v.to(self.device) for k, v in inputs.items()}
+
+        with torch.no_grad():
+            outputs = self.model(**inputs)
+            logits_per_image = outputs.logits_per_image
+            probs = logits_per_image.softmax(dim=1)
+
+        pred_indices = probs.argmax(dim=1).tolist()
+        return [team_classes[i] for i in pred_indices]
+    
+    def process_frame_batched(self, frame, player_track):
+        pil_images = []
+        player_ids = []
+        bboxes = []
+
+        for pid, info in player_track.items():
+            bbox = info['bbox']
+            crop = frame[int(bbox[1]):int(bbox[3]), int(bbox[0]):int(bbox[2])]
+            pil_img = Image.fromarray(crop)
+
+            if self.crop:
+                pil_img = self.crop_img(pil_img)
+
+            if self.save_imgs:
+                r = random.randint(1, 1_000_000)
+                pil_img.save(f"imgs/masked/masked_{r}.png")
+
+            pil_images.append(pil_img)
+            player_ids.append(pid)
+            bboxes.append(bbox)
+
+        predicted_colors = self.get_player_color_batch(pil_images)
+
+        assignment = {}
+        for pid, color in zip(player_ids, predicted_colors):
+            self.player_team_cache_history[pid].append(color)
+            assignment[pid] = self.get_team_from_history(pid)
+
+        return assignment
 
     def get_player_teams_over_frames(self, vid_frames, player_tracks):
-        self.load_model()
-        player_assignment=[]
-        for frame_id, player_track in enumerate(player_tracks):        
-            player_assignment.append({})
-            
-            
-            for player_id, track in player_track.items():
-                team = self.get_player_team(vid_frames[frame_id], track['bbox'], player_id)
-                player_assignment[frame_id][player_id] = team
+        player_assignment = []
+
+        for frame_id, player_track in enumerate(player_tracks):
+            frame = vid_frames[frame_id]
+            assignment = self.process_frame_batched(frame, player_track)
+            player_assignment.append(assignment)
 
         return player_assignment
