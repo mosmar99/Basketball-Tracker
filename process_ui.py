@@ -119,10 +119,9 @@ def open_annotation(video_name, panorama_uri, status_label):
     picker.pack()
 
     def finish():
-        points = picker.get_points()  # list of 4 [x,y]
+        points = picker.get_points()
         win.destroy()
 
-        # warp in background
         threading.Thread(
             target=call_warp,
             args=(panorama_uri, points, status_label),
@@ -131,7 +130,7 @@ def open_annotation(video_name, panorama_uri, status_label):
 
     tk.Button(win, text="Done", command=finish).pack()
 
-def start_stitch_annotation(listbox, status_label):
+def start_stitch_annotation(listbox, listbox_courts, status_label):
     try:
         index = listbox.curselection()
         if not index:
@@ -142,7 +141,6 @@ def start_stitch_annotation(listbox, status_label):
 
         upload_raw_vid(video_name)
 
-        # Run stitch → annotation in background
         threading.Thread(
             target=call_stitch,
             args=(video_name, status_label, lambda vn, uri: open_annotation(vn, uri, status_label)),
@@ -152,10 +150,16 @@ def start_stitch_annotation(listbox, status_label):
     except Exception as e:
         messagebox.showerror("Error", str(e))
 
+def list_courts(listbox):
+    listbox.delete(0, tk.END)
+    courts = list_bucket_contents("basketball-panorama-warp")
+    for c in courts:
+        listbox.insert(tk.END, c)
+
 def main():
     root = tk.Tk()
     root.title("Basketball Video Processor")
-    root.geometry("400x600")
+    root.geometry("400x550")
 
     # Title
     tk.Label(root, text="Select a video to process:", font=("Arial", 14)).pack(pady=10)
@@ -172,13 +176,13 @@ def main():
     for v in videos:
         listbox.insert(tk.END, v)
 
+    tk.Label(root, text="Select a Reference Court", font=("Arial", 14)).pack(pady=10)
+
     # Listbox of courts
     listbox_courts = tk.Listbox(root, width=40, height=10, font=("Arial", 12), exportselection=False)
     listbox_courts.pack(pady=5)
 
-    courts = list_bucket_contents("basketball-panorama-warp")
-    for c in courts:
-        listbox_courts.insert(tk.END, c)
+    list_courts(listbox_courts)
 
     # OK button
     tk.Button(
@@ -191,11 +195,20 @@ def main():
 
     # Court Creation
     tk.Button(
-    root,
-    text="Create new court",
-    font=("Arial", 12),
-    command=lambda: start_stitch_annotation(listbox, status_label),
-    width=15,
+        root,
+        text="Create new court",
+        font=("Arial", 12),
+        command=lambda: start_stitch_annotation(listbox, listbox_courts, status_label),
+        width=15,
+    ).pack(pady=5)
+
+    # Refresh Court
+    tk.Button(
+        root,
+        text="Refresh Courts",
+        font=("Arial", 12),
+        command=lambda: list_courts(listbox_courts),
+        width=15,
     ).pack(pady=5)
 
     # Status label
