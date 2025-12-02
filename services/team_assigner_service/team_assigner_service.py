@@ -55,9 +55,6 @@ async def assign_teams(
         vid_frames=frames,
         player_tracks=player_tracks,
     )
-    for key, time in team_assigner.times.items():
-        print(f"{key}: {time}")
-    print(team_assigner.device)
 
     # Serialize
     payload = {

@@ -88,7 +88,6 @@ class TeamAssigner:
         return 1 if most_freq == self.team_A else 2
 
     def get_player_team(self,frame,player_bbox,player_id):
-        start = time()
         player_color = self.get_player_color(frame,player_bbox)
         self.player_team_cache_history[player_id].append(player_color)
         team_id = self.get_team_from_history(player_id)
