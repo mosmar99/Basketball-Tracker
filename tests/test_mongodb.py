@@ -1,21 +1,17 @@
-from pymongo.mongo_client import MongoClient
-from pymongo.server_api import ServerApi
-from dotenv import load_dotenv
 import os
+from pymongo import MongoClient
+from dotenv import load_dotenv
+
 load_dotenv()
 
-username = os.getenv('USERNAME_MONGODB')
-password = os.getenv('PASSWORD_MONGODB')
+MONGODB_HOST = os.getenv("MONGODB_HOST", "127.0.0.1")
+MONGODB_PORT = os.getenv("MONGODB_PORT", "27017")
 
+uri = f"mongodb://{MONGODB_HOST}:{MONGODB_PORT}/"
+client = MongoClient(uri)
 
-uri = f"mongodb+srv://{username}:{password}@basketball-tracker.j0hhg2r.mongodb.net/?appName=Basketball-Tracker"
-
-# Create a new client and connect to the server
-client = MongoClient(uri, server_api=ServerApi('1'))
-
-# Send a ping to confirm a successful connection
 try:
-    client.admin.command('ping')
-    print("Pinged your deployment. You successfully connected to MongoDB!")
+    client.admin.command("ping")
+    print(f"Connected to MongoDB at {uri}")
 except Exception as e:
-    print(e)
+    print("Connection failed:", e)
