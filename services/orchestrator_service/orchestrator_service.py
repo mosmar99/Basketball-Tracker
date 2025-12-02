@@ -12,7 +12,7 @@ from api_utils import (
 
 from shared import download_to_temp, upload_video
 from utils import read_video, save_video
-from canvas import PlayerTrackDrawer, BallTrackDrawer, BallPossessionDrawer, TDOverlay
+from canvas import PlayerTrackDrawer, BallTrackDrawer, TDOverlay
 from ball_acq import BallAcquisitionSensor
 
 app = FastAPI()
@@ -46,7 +46,6 @@ async def process_video(video_name: str):
     # 5) Draw overlays
     player_draw = PlayerTrackDrawer()
     ball_draw   = BallTrackDrawer()
-    poss_draw   = BallPossessionDrawer()
     top_down_overlay = TDOverlay(court_reference, base_court)
 
     player_vid_frames = player_draw.draw_annotations(
@@ -56,11 +55,6 @@ async def process_video(video_name: str):
         ball_acquisition_list,
     )
     output_vid_frames = ball_draw.draw_annotations(player_vid_frames, ball_tracks)
-    output_vid_frames = poss_draw.draw_ball_possession(
-        output_vid_frames,
-        team_assignments,
-        ball_acquisition_list,
-    )
 
     output_vid_frames = top_down_overlay.draw_overlay(
         output_vid_frames,
