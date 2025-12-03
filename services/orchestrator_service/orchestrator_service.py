@@ -61,11 +61,11 @@ async def process_video(video_name: str):
         ball_acquisition_list,
     )
 
+    td_tracks = top_down_overlay.get_td_tracks(player_tracks, team_assignments, H)
+
     output_vid_frames = top_down_overlay.draw_overlay(
         output_vid_frames,
-        player_tracks,
-        team_assignments,
-        H,
+        td_tracks
     )
 
     # 6) Save & upload
