@@ -8,6 +8,7 @@ from api_utils import (
     deserialize_tracks,
     deserialize_team_assignments,
     get_homographies_from_service,
+    id_to_team_ball_acquisition
 )
 
 from shared import download_to_temp, upload_video
@@ -40,6 +41,9 @@ async def process_video(video_name: str):
     # 4) Ball possession
     ball_sensor = BallAcquisitionSensor()
     ball_acquisition_list = ball_sensor.detect_ball_possession(player_tracks, ball_tracks)
+
+    ball_team_possessions = id_to_team_ball_acquisition(ball_acquisition_list,
+                                                        team_assignments)   
 
     H = get_homographies_from_service(tmp_video_path, court_reference)
 
@@ -76,7 +80,8 @@ async def process_video(video_name: str):
 
     return JSONResponse({
         "status": "completed",
-        "output_video": f"{key}"
+        "ball_tp": f"{ball_team_possessions}",
+        "vid_name": f"{video_name}"
     })
 
 if __name__ == "__main__":

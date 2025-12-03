@@ -1,12 +1,25 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Response, Request
 from fastapi.responses import StreamingResponse, HTMLResponse
 from shared.storage import get_s3
 
 BUCKET_RAW = "basketball-raw-videos"
 BUCKET_PROCESSED = "basketball-processed"
+BUCKET_FIGURES = "figures"
 
 app = FastAPI(title="Video Viewer Service")
 
+@app.get("/stats_image/{video_name}")
+def serve_stats_image(video_name: str):
+    s3 = get_s3()
+    key = f"ball_possession/{video_name}.png"
+
+    try:
+        obj = s3.get_object(Bucket=BUCKET_FIGURES, Key=key)
+        img_bytes = obj["Body"].read()
+    except Exception:
+        raise HTTPException(status_code=404, detail="Statistics image not found")
+
+    return Response(content=img_bytes, media_type="image/png")
 
 @app.get("/video_raw/{video_name}")
 def stream_raw(video_name: str):
@@ -21,7 +34,6 @@ def stream_raw(video_name: str):
     return StreamingResponse(obj["Body"], media_type="video/mp4")
 
 
-from fastapi import FastAPI, HTTPException, Response, Request
 
 @app.get("/video_processed/{video_name}")
 async def stream_processed(request: Request, video_name: str):
@@ -36,18 +48,15 @@ async def stream_processed(request: Request, video_name: str):
 
     range_header = request.headers.get("range")
     if range_header:
-        # Example "bytes=0-"
         bytes_range = range_header.replace("bytes=", "").split("-")
         start = int(bytes_range[0])
         end = int(bytes_range[1] or (file_size - 1))
     else:
-        # No range header → browser still needs full file with correct metadata
         start = 0
         end = file_size - 1
 
     chunk_size = end - start + 1
 
-    # Request only the needed bytes from MinIO
     stream_obj = s3.get_object(
         Bucket=BUCKET_PROCESSED,
         Key=key,
@@ -63,7 +72,6 @@ async def stream_processed(request: Request, video_name: str):
         "Content-Type": "video/mp4",
     }
 
-    # Status code 206 = Partial Content → REQUIRED for browser playback
     return Response(content, status_code=206, headers=headers)
 
 
@@ -82,9 +90,13 @@ def video_statistics(video_name: str):
         <video width="100%" controls style="margin-bottom: 40px;">
             <source src="/video_processed/{video_name}" type="video/mp4">
         </video>
+        
+        <h2 style="text-decoration: underline;">Statistics</h2>
 
-        <h2>Statistics</h2>
-        <p>(Coming soon.)</p>
+        <h3 style="margin-top: 20px;">Ball Possession Plot</h3>
+        <img src="/stats_image/{video_name}"
+             alt="Ball Possession Plot"
+             style="width:100%; border:1px solid #ccc; margin-top:10px;"/
 
     </body>
     </html>
