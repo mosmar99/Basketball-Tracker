@@ -8,6 +8,7 @@ RUN apt-get update && apt-get install -y \
 
 COPY services/orchestrator_service/orchestrator_service.py /app/
 COPY services/orchestrator_service/api_utils.py /app/
+COPY services/orchestrator_service/mongo_writer.py /app/
 COPY services/orchestrator_service/imgs /app/imgs
 COPY services/orchestrator_service/requirements.txt /app/
 
