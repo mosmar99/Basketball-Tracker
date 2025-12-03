@@ -81,19 +81,26 @@ def upload_img(vid_name):
 
 def possession_plot(x, y, video_name):
     y_percent = np.array(y) * 100
-    fig, ax = plt.subplots(figsize=(14, 4))
+
+    fig, ax_left = plt.subplots(figsize=(14, 4))
+    ax_right = ax_left.twinx()
 
     for i, val in enumerate(y_percent):
-        ax.bar(i, val, color="#9cb2a0", width=1.0)
-        ax.bar(i, 100 - val, bottom=val, color="#9eaec6", width=1.0)
+        ax_left.bar(i, val, color="#9cb2a0", width=1.0)
+        ax_left.bar(i, 100 - val, bottom=val, color="#9eaec6", width=1.0)
 
-    ax.plot(x, y_percent, color="black", linewidth=1)
+    ax_left.plot(x, y_percent, color="black", linewidth=2)
 
-    ax.set_ylim(0, 100)
-    ax.set_yticks(np.arange(0, 101, 5))
-    ax.set_xlabel("Frames")
-    ax.set_ylabel("Possession (%)")
-    ax.set_xlim(0, len(x))
+    ax_left.set_ylim(0, 100)
+    ax_left.set_yticks(np.arange(0, 101, 5))
+    ax_left.set_ylabel("Team A Possession (%)")
+
+    ax_right.set_ylim(100, 0)
+    ax_right.set_yticks(np.arange(0, 101, 5))
+    ax_right.set_ylabel("Team B Possession (%)")
+
+    ax_left.set_xlim(0, len(x))
+    ax_left.set_xlabel("Frames")
 
     plt.tight_layout()
 
@@ -108,24 +115,39 @@ def possession_plot(x, y, video_name):
 
     return path
 
-def possession_to_percentages(ball_tp, step=0.01):
+def possession_to_percentages(ball_tp):
+    x = []
     y = []
-    current = 0.5
-    for team in ball_tp:
-        if team == -1 and not y:
-            current = 0.5
-        elif team == 1 and not y:
-            current = 1.0
-        elif team == 2 and not y:
-            current = 0.0
+
+    team1_count = 0
+    team2_count = 0
+    total_possession_frames = 0
+
+    for i, team in enumerate(ball_tp):
+
+        # If no possession, percentage stays the same
+        if team == -1:
+            # Use last known value or 50%
+            if not y:
+                y.append(0.5)
+            else:
+                y.append(y[-1])
         else:
+            # Update counters
             if team == 1:
-                current = min(current + step, 1.0)
+                team1_count += 1
             elif team == 2:
-                current = max(current - step, 0.0)
-        y.append(current)
-    x = list(range(len(y)))
+                team2_count += 1
+
+            total_possession_frames = team1_count + team2_count
+            team1_percentage = team1_count / total_possession_frames
+
+            y.append(team1_percentage)
+
+        x.append(i)
+
     return x, y
+
 
 def open_stats_page(video_name):
     url = f"{STATS_URL}/{video_name}"
