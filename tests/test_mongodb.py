@@ -3,15 +3,19 @@ from pymongo import MongoClient
 from dotenv import load_dotenv
 
 load_dotenv()
+port = os.getenv("MONGODB_PORT", "27017")
+user = os.getenv("MONGODB_USER", "root")
+password = os.getenv("MONGODB_PASS", "password")
 
-MONGODB_HOST = os.getenv("MONGODB_HOST", "127.0.0.1")
-MONGODB_PORT = os.getenv("MONGODB_PORT", "27017")
+MONGODB_URI = f"mongodb://{user}:{password}@localhost:{port}/"
+print("Connecting to:", MONGODB_URI)
 
-uri = f"mongodb://{MONGODB_HOST}:{MONGODB_PORT}/"
-client = MongoClient(uri)
+client = MongoClient(MONGODB_URI, serverSelectionTimeoutMS=5000)
 
 try:
-    client.admin.command("ping")
-    print(f"Connected to MongoDB at {uri}")
+    result = client.admin.command("ping")
+    print("Successfully connected to MongoDB!")
+    print(result)
 except Exception as e:
-    print("Connection failed:", e)
+    print("MongoDB connection failed!")
+    print("Error:", e)
