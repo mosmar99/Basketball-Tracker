@@ -107,10 +107,11 @@ def possession_plot(x, y, video_name):
 def control_plot(control_stats, video_name):
     y_percent = []
     for frame in control_stats:
-        a = frame.get("1", "0")
-        b = frame.get("2", "0")
+        a = float(frame.get("1", 0))
+        b = float(frame.get("2", 0))
+
         total = a + b
-        if total == "0":
+        if total == 0:
             y_percent.append(50)
         else:
             y_percent.append((a / total) * 100)

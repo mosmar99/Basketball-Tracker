@@ -6,6 +6,8 @@ class TDOverlay:
         self.minimap_w = xz
         self.minimap_h = yz
 
+        self.video_area = xz * yz
+
         self.ref = cv2.imread(ref)
         self.ref_w, self.ref_h = self.ref.shape[:2]
 
@@ -51,14 +53,23 @@ class TDOverlay:
         facets, _ = subdiv.getVoronoiFacetList([])
         vor_minimap = minimap.copy()
         frame_control = {1: 0, 2: 0}
+
+        boundary_poly = np.array([
+            [0, 0], 
+            [self.minimap_w, 0], 
+            [self.minimap_w, self.minimap_h], 
+            [0, self.minimap_h]
+        ], dtype=np.float32)
+
         for facet, t in zip(facets, teams):
             facet = np.array(facet, dtype=np.int32)
 
-            frame_control[t] += cv2.contourArea(facet.astype(np.float32))
+            intersection_area, _ = cv2.intersectConvexConvex(facet, boundary_poly)
+            frame_control[t] += intersection_area / self.video_area
 
             cv2.fillConvexPoly(vor_minimap, facet, self.color[t], lineType=cv2.LINE_AA)
             cv2.polylines(vor_minimap, [facet], True, (0, 0, 0), 2, lineType=cv2.LINE_AA)
-        
+
         result = cv2.addWeighted(vor_minimap, alpha, minimap, 1-alpha, 0)
         return result, frame_control
     
