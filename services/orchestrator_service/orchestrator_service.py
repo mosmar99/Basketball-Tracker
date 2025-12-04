@@ -20,14 +20,15 @@ from ball_acq import BallAcquisitionSensor
 app = FastAPI()
 
 @app.post("/process")
-async def process_video(video_name: str):
+async def process_video(video_name: str, reference_court: str):
     bucket = "basketball-raw-videos"
+    ref_bucket = "basketball-panorama-warp"
     key = f"{video_name}.mp4"
-    court_reference = "imgs/full_court_warped.jpg" # Hardcoded, should be moved to bucket
     base_court = "imgs/court.png" # Hardcoded, should be moved to bucket
 
     # 1) Download raw video
     tmp_video_path = download_to_temp(key=key, bucket=bucket)
+    tmp_ref_path = download_to_temp(key=reference_court, bucket=ref_bucket)
     vid_frames = read_video(tmp_video_path)
 
     # 2) Get tracks
@@ -46,12 +47,12 @@ async def process_video(video_name: str):
     ball_team_possessions = id_to_team_ball_acquisition(ball_acquisition_list,
                                                         team_assignments)   
 
-    H = get_homographies_from_service(tmp_video_path, court_reference)
+    H = get_homographies_from_service(tmp_video_path, tmp_ref_path)
 
     # 5) Draw overlays
     player_draw = PlayerTrackDrawer()
     ball_draw   = BallTrackDrawer()
-    top_down_overlay = TDOverlay(court_reference, base_court)
+    top_down_overlay = TDOverlay(tmp_ref_path, base_court)
 
     player_vid_frames = player_draw.draw_annotations(
         vid_frames,
@@ -61,11 +62,11 @@ async def process_video(video_name: str):
     )
     output_vid_frames = ball_draw.draw_annotations(player_vid_frames, ball_tracks)
 
+    td_tracks = top_down_overlay.get_td_tracks(player_tracks, team_assignments, H)
+
     output_vid_frames = top_down_overlay.draw_overlay(
         output_vid_frames,
-        player_tracks,
-        team_assignments,
-        H,
+        td_tracks
     )
 
     # 6) Save & upload
