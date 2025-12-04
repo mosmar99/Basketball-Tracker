@@ -1,14 +1,13 @@
-from collections import defaultdict, deque, Counter
-import cv2
-from PIL import Image
-from transformers import CLIPProcessor, CLIPModel
-from ultralytics import SAM
-import numpy as np
-import random
-from time import time
-import torch
-
 import os
+import cv2
+import torch
+import random
+import numpy as np
+from time import time
+from PIL import Image
+from ultralytics import SAM
+from transformers import CLIPProcessor, CLIPModel
+from collections import defaultdict, deque, Counter
 
 import sys 
 sys.path.append('../')

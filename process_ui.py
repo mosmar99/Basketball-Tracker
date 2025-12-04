@@ -1,18 +1,41 @@
 import os
+import json
 import threading
 import requests
+import subprocess
 import tkinter as tk
+import numpy as np
+import matplotlib.pyplot as plt
 from tkinter import messagebox, Toplevel
-from shared.storage import upload_video, download_to_temp, list_bucket_contents
-import json
-
 from client.annotate_pano import QuadPicker
+from shared.storage import upload_video, download_to_temp, list_bucket_contents
+
 
 API_URL = "http://localhost:8000/process"
+STATS_URL = "http://localhost:8004/video_statistics"
 VIDEO_DIR = "./input_videos"
 BUCKET_RAW = "basketball-raw-videos"
 
-def send_request(selected_video, reference_court, status_label):
+def safe_open_url(url: str):
+    try:
+        if "WSL_DISTRO_NAME" in os.environ:
+            win_path = url.replace("&", "^&")
+            subprocess.Popen(["powershell.exe", "-Command", f"start '{win_path}'"])
+            return
+    except Exception:
+        pass
+
+    try:
+        subprocess.Popen(["xdg-open", url])
+        return
+    except Exception:
+        pass
+
+    import webbrowser
+    webbrowser.open(url)
+
+
+def send_request(selected_video, reference_court, status_label, stats_button):
     """Runs inside a thread so UI does not freeze."""
     try:
         status_label.config(text="Processing...", fg="orange")
@@ -20,6 +43,17 @@ def send_request(selected_video, reference_court, status_label):
         resp = requests.post(API_URL, params={"video_name": selected_video, "reference_court": reference_court})
 
         if resp.status_code == 200:
+            data = resp.json()
+            ball_tp = json.loads(data["ball_tp"])
+            vid_name = data["vid_name"]
+
+            x, y = possession_to_percentages(ball_tp)
+            path = possession_plot(x, y, vid_name)
+            upload_img(vid_name) 
+
+            status_label.config(text="Done!", fg="green")
+            stats_button.config(state="normal") 
+            
             status_label.config(text="Done!", fg="green")
         else:
             status_label.config(text="Error!", fg="red")
@@ -29,13 +63,100 @@ def send_request(selected_video, reference_court, status_label):
         status_label.config(text="Error!", fg="red")
         messagebox.showerror("Exception", str(e))
 
+def upload_img(vid_name):
+    BUCKET_NAME = "figures"
+
+    local_path = f"figures/ball_possession/{vid_name}.png"
+    key = f"ball_possession/{vid_name}.png"
+
+    uri = upload_video(local_path, key, BUCKET_NAME=BUCKET_NAME)
+
+    print("Uploaded possession plot to:", uri)
+    return uri
+
+
+def possession_plot(x, y, video_name):
+    y_percent = np.array(y) * 100
+
+    fig, ax_left = plt.subplots(figsize=(14, 4))
+    ax_right = ax_left.twinx()
+
+    for i, val in enumerate(y_percent):
+        ax_left.bar(i, val, color="#9cb2a0", width=1.0)
+        ax_left.bar(i, 100 - val, bottom=val, color="#9eaec6", width=1.0)
+
+    ax_left.plot(x, y_percent, color="black", linewidth=2)
+
+    ax_left.set_ylim(0, 100)
+    ax_left.set_yticks(np.arange(0, 101, 5))
+    ax_left.set_ylabel("Team A Possession (%)")
+
+    ax_right.set_ylim(100, 0)
+    ax_right.set_yticks(np.arange(0, 101, 5))
+    ax_right.set_ylabel("Team B Possession (%)")
+
+    ax_left.set_xlim(0, len(x))
+    ax_left.set_xlabel("Frames")
+
+    plt.tight_layout()
+
+    folder = "figures/ball_possession"
+    os.makedirs(folder, exist_ok=True)
+
+    filename = f"{video_name}.png"
+    path = os.path.join(folder, filename)
+
+    fig.savefig(path, dpi=300)
+    plt.close(fig)
+
+    return path
+
+def possession_to_percentages(ball_tp):
+    x = []
+    y = []
+
+    team1_count = 0
+    team2_count = 0
+    total_possession_frames = 0
+
+    for i, team in enumerate(ball_tp):
+
+        # If no possession, percentage stays the same
+        if team == -1:
+            # Use last known value or 50%
+            if not y:
+                y.append(0.5)
+            else:
+                y.append(y[-1])
+        else:
+            # Update counters
+            if team == 1:
+                team1_count += 1
+            elif team == 2:
+                team2_count += 1
+
+            total_possession_frames = team1_count + team2_count
+            team1_percentage = team1_count / total_possession_frames
+
+            y.append(team1_percentage)
+
+        x.append(i)
+
+    return x, y
+
+
+def open_stats_page(video_name):
+    url = f"{STATS_URL}/{video_name}"
+    print("Opening:", url)
+    safe_open_url(url)
+
 def upload_raw_vid(vid_name):
     local_path = f"{VIDEO_DIR}/{vid_name}.mp4"
     key = f"{vid_name}.mp4"
     uri = upload_video(local_path, key, BUCKET_NAME=BUCKET_RAW)
     print("Uploaded to:", uri)
 
-def start_processing(listbox, listbox_court, status_label):
+def start_processing(listbox, listbox_court, status_label, stats_button):
     try:
         index = listbox.curselection()
         if not index:
@@ -52,9 +173,13 @@ def start_processing(listbox, listbox_court, status_label):
 
         upload_raw_vid(video_name)
 
+        stats_button.config(state="disabled")
+
+        stats_button.config(command=lambda vn=video_name: open_stats_page(vn))
+
         # Run network call in background
         threading.Thread(
-            target=send_request, args=(video_name, reference_court, status_label), daemon=True
+            target=send_request, args=(video_name, reference_court, status_label, stats_button), daemon=True
         ).start()
 
     except Exception as e:
@@ -159,7 +284,7 @@ def list_courts(listbox):
 def main():
     root = tk.Tk()
     root.title("Basketball Video Processor")
-    root.geometry("400x550")
+    root.geometry("400x600")
 
     # Title
     tk.Label(root, text="Select a video to process:", font=("Arial", 14)).pack(pady=10)
@@ -184,14 +309,14 @@ def main():
 
     list_courts(listbox_courts)
 
-    # OK button
-    tk.Button(
+    # Stats
+    stats_button = tk.Button(
         root,
-        text="OK",
+        text="Open Statistics Page",
         font=("Arial", 12),
-        command=lambda: start_processing(listbox, listbox_courts, status_label),
-        width=10,
-    ).pack(pady=10)
+        state="disabled",
+        width=20,
+    )
 
     # Court Creation
     tk.Button(
@@ -211,7 +336,17 @@ def main():
         width=15,
     ).pack(pady=5)
 
-    # Status label
+    # Proccess button
+    tk.Button(
+        root,
+        text="Proccess",
+        font=("Arial", 12),
+        command=lambda: start_processing(listbox, listbox_courts, status_label, stats_button),
+        width=10,
+    ).pack(pady=10)
+
+    stats_button.pack(pady=10)
+
     status_label = tk.Label(root, text="", font=("Arial", 12))
     status_label.pack(pady=5)
 

@@ -1,3 +1,4 @@
+import os
 import uvicorn
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
@@ -7,11 +8,13 @@ from api_utils import (
     deserialize_tracks,
     deserialize_team_assignments,
     get_homographies_from_service,
+    id_to_team_ball_acquisition
 )
 
+from mongo_writer import save_ball_possession
 from shared import download_to_temp, upload_video
 from utils import read_video, save_video
-from canvas import PlayerTrackDrawer, BallTrackDrawer, BallPossessionDrawer, TDOverlay
+from canvas import PlayerTrackDrawer, BallTrackDrawer, TDOverlay
 from ball_acq import BallAcquisitionSensor
 
 app = FastAPI()
@@ -41,12 +44,14 @@ async def process_video(video_name: str, reference_court: str):
     ball_sensor = BallAcquisitionSensor()
     ball_acquisition_list = ball_sensor.detect_ball_possession(player_tracks, ball_tracks)
 
+    ball_team_possessions = id_to_team_ball_acquisition(ball_acquisition_list,
+                                                        team_assignments)   
+
     H = get_homographies_from_service(tmp_video_path, tmp_ref_path)
 
     # 5) Draw overlays
     player_draw = PlayerTrackDrawer()
     ball_draw   = BallTrackDrawer()
-    poss_draw   = BallPossessionDrawer()
     top_down_overlay = TDOverlay(tmp_ref_path, base_court)
 
     player_vid_frames = player_draw.draw_annotations(
@@ -56,11 +61,6 @@ async def process_video(video_name: str, reference_court: str):
         ball_acquisition_list,
     )
     output_vid_frames = ball_draw.draw_annotations(player_vid_frames, ball_tracks)
-    output_vid_frames = poss_draw.draw_ball_possession(
-        output_vid_frames,
-        team_assignments,
-        ball_acquisition_list,
-    )
 
     td_tracks = top_down_overlay.get_td_tracks(player_tracks, team_assignments, H)
 
@@ -73,11 +73,22 @@ async def process_video(video_name: str, reference_court: str):
     out_path = f"output_videos/{video_name}.mp4"
     save_video(output_vid_frames, out_path)
 
-    upload_video(local_path=out_path, key=key, BUCKET_NAME="basketball-processed")
+    # 7) HTML req. proper .mp4 packaging, fix with ffmpeg
+    fixed_path = f"output_videos/{video_name}_fixed.mp4"
+    os.system(
+        f"ffmpeg -y -i {out_path} -vcodec libx264 -preset fast -movflags +faststart {fixed_path}"
+    )
+
+    # 8) upload vid to bucket
+    upload_video(local_path=fixed_path, key=key, BUCKET_NAME="basketball-processed")
+
+    # 9) upload ball possession statistics to mongodb
+    save_ball_possession(video_name, ball_team_possessions)
 
     return JSONResponse({
         "status": "completed",
-        "output_video": f"{key}"
+        "ball_tp": f"{ball_team_possessions}",
+        "vid_name": f"{video_name}"
     })
 
 if __name__ == "__main__":

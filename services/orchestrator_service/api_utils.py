@@ -6,6 +6,18 @@ DETECTOR_URL = os.getenv("DETECTOR_URL", "http://localhost:8000/track")
 ASSIGNER_URL = os.getenv("TEAM_ASSIGNER_URL", "http://localhost:8001/assign_teams")
 HOMOGRAPHY_URL = os.getenv("HOMOGRAPHY_URL", "http://localhost:8003/assign_teams")
 
+def id_to_team_ball_acquisition(ball_acq_list, team_assignments):
+    team_possession = []
+
+    for frame_id, player_id in enumerate(ball_acq_list):
+        if player_id == -1:
+            team_possession.append(-1)
+        else:
+            team_id = team_assignments[frame_id].get(player_id, -1)
+            team_possession.append(team_id)
+
+    return team_possession
+
 def get_team_assignments_from_service(local_video_path: str, player_tracks):
     url = ASSIGNER_URL
     tracks_json_str = json.dumps(player_tracks)
