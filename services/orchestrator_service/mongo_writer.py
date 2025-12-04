@@ -19,11 +19,11 @@ db = client["basketball"]
 possessions = db["ball_possession"]
 
 def save_ball_possession(video_id, ball_team_possessions, fps=30):
-    swedish_time = datetime.now(ZoneInfo("Europe/Stockholm"))
+    time = datetime.now(ZoneInfo("Europe/Stockholm"))
 
     doc = {
         "video_id": video_id,
-        "created_at": swedish_time,
+        "created_at": time,
         "total_frames": len(ball_team_possessions),
         "fps": fps,
         "ball_possession": ball_team_possessions,
