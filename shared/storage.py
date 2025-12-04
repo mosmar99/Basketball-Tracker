@@ -21,6 +21,20 @@ def get_s3():
         region_name="us-east-1",
     )
 
+def list_bucket_contents(bucket_name):
+
+    s3 = get_s3()
+
+    try:
+        objects = s3.list_objects_v2(Bucket=bucket_name)
+    except:
+        return []
+
+    if "Contents" not in objects:
+        return []
+
+    return [obj["Key"] for obj in objects["Contents"]]
+
 def bucket_exists(s3, BUCKET_NAME):
     buckets = [b["Name"] for b in s3.list_buckets()["Buckets"]]
     if BUCKET_NAME not in buckets:
