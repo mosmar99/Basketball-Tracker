@@ -1,5 +1,4 @@
 import os
-import time
 from datetime import datetime
 from zoneinfo import ZoneInfo
 from pymongo import MongoClient
@@ -30,6 +29,27 @@ def save_ball_possession(video_id, ball_team_possessions, fps=30):
     }
 
     possessions.update_one(
+        {"video_id": video_id},
+        {"$set": doc},
+        upsert=True,
+    )
+
+heatmaps = db["ball_heatmaps"]
+
+def save_ball_heatmap_mongo(video_id, heatmap):
+    time = datetime.now(ZoneInfo("Europe/Stockholm"))
+
+    heatmap_list = heatmap.tolist()
+
+    doc = {
+        "video_id": video_id,
+        "created_at": time,
+        "height": heatmap.shape[0],
+        "width": heatmap.shape[1],
+        "heatmap": heatmap_list,
+    }
+
+    heatmaps.update_one(
         {"video_id": video_id},
         {"$set": doc},
         upsert=True,

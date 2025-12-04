@@ -53,8 +53,6 @@ def send_request(selected_video, reference_court, status_label, stats_button):
 
             status_label.config(text="Done!", fg="green")
             stats_button.config(state="normal") 
-            
-            status_label.config(text="Done!", fg="green")
         else:
             status_label.config(text="Error!", fg="red")
             messagebox.showerror("Error", f"Server returned {resp.status_code}")
@@ -73,7 +71,6 @@ def upload_img(vid_name):
 
     print("Uploaded possession plot to:", uri)
     return uri
-
 
 def possession_plot(x, y, video_name):
     y_percent = np.array(y) * 100

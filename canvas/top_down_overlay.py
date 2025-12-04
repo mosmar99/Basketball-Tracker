@@ -47,6 +47,77 @@ class TDOverlay:
             topdown.append(frame)
 
         return topdown
+    
+    def draw_ball_overlay(self, td_ball_track):
+        frames = []
+        heatmap = np.zeros((self.minimap_h, self.minimap_w), dtype=np.float32)
+
+        for ball_info in td_ball_track:
+            frame = np.zeros((self.minimap_h, self.minimap_w, 3), dtype=np.uint8)
+
+            if ball_info is None:
+                frames.append(frame)
+                continue
+
+            (px, py) = ball_info["pos"]
+            (x1, y1, x2, y2) = ball_info["bbox"]
+
+            mx = int(px * self.minimap_w)
+            my = int(py * self.minimap_h)
+
+            bw = x2 - x1
+            bh = y2 - y1
+            rad = int(max(bw, bh) * 0.15)
+            rad = max(rad, 3)
+
+            mx = max(0, min(mx, self.minimap_w - 1))
+            my = max(0, min(my, self.minimap_h - 1))
+
+            cv2.circle(frame, (mx, my), rad, (0, 0, 255), -1)
+
+            cv2.circle(heatmap, (mx, my), rad, 1, -1)
+
+            frames.append(frame)
+
+        return frames, heatmap
+    
+    def get_ball_td_track(self, ball_tracks, H):
+        td_ball = []
+
+        for frame_idx in range(len(ball_tracks)):
+            ball_dict = ball_tracks[frame_idx]
+
+            if not ball_dict or H[frame_idx] is None:
+                td_ball.append(None)
+                continue
+
+            # get the first (and only) ball track id
+            track_id = next(iter(ball_dict))
+            ball = ball_dict[track_id]
+
+            if "bbox" not in ball:
+                td_ball.append(None)
+                continue
+
+            x1, y1, x2, y2 = ball["bbox"]
+
+            bx = (x1 + x2) / 2
+            by = y2
+
+            p = np.array([bx, by, 1.0], dtype=np.float32)
+            wp = H[frame_idx] @ p
+            wp /= wp[2]
+
+            px = wp[0] / self.ref.shape[1]
+            py = wp[1] / self.ref.shape[0]
+
+            td_ball.append({
+                "pos": (px, py),
+                "bbox": (x1, y1, x2, y2),
+                "track_id": track_id
+            })
+
+        return td_ball
 
     def draw_voronoi(self, minimap, subdiv, colors, alpha=0.2):
         facets, _ = subdiv.getVoronoiFacetList([])

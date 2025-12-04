@@ -11,11 +11,12 @@ from api_utils import (
     id_to_team_ball_acquisition
 )
 
-from mongo_writer import save_ball_possession
-from shared import download_to_temp, upload_video
-from utils import read_video, save_video
-from canvas import PlayerTrackDrawer, BallTrackDrawer, TDOverlay
+from utils import read_video, save_video, save_ball_overlay_video, save_ball_heatmap
 from ball_acq import BallAcquisitionSensor
+from shared import download_to_temp, upload_video
+from canvas import PlayerTrackDrawer, BallTrackDrawer, TDOverlay
+from mongo_writer import save_ball_possession, save_ball_heatmap_mongo
+
 
 app = FastAPI()
 
@@ -69,20 +70,31 @@ async def process_video(video_name: str, reference_court: str):
         td_tracks
     )
 
-    # 6) Save & upload
+    # 6) Create Ball Heatmap Video and Figure
+    for i, b in enumerate(ball_tracks[:5]):
+        print(f"BALL TRACK[{i}] = {b}")
+
+    td_ball = top_down_overlay.get_ball_td_track(ball_tracks, H)
+    ball_frames, heatmap = top_down_overlay.draw_ball_overlay(td_ball)
+
+    save_ball_overlay_video(ball_frames, video_name)
+    save_ball_heatmap(heatmap, video_name)
+    save_ball_heatmap_mongo(video_name, heatmap)
+
+    # 7) Save & upload
     out_path = f"output_videos/{video_name}.mp4"
     save_video(output_vid_frames, out_path)
 
-    # 7) HTML req. proper .mp4 packaging, fix with ffmpeg
+    # 8) HTML req. proper .mp4 packaging, fix with ffmpeg
     fixed_path = f"output_videos/{video_name}_fixed.mp4"
     os.system(
         f"ffmpeg -y -i {out_path} -vcodec libx264 -preset fast -movflags +faststart {fixed_path}"
     )
 
-    # 8) upload vid to bucket
+    # 9) upload vid to bucket
     upload_video(local_path=fixed_path, key=key, BUCKET_NAME="basketball-processed")
 
-    # 9) upload ball possession statistics to mongodb
+    # 10) upload ball possession statistics to mongodb
     save_ball_possession(video_name, ball_team_possessions)
 
     return JSONResponse({
