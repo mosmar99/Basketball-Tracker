@@ -8,7 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from tkinter import messagebox, Toplevel
 from client.annotate_pano import QuadPicker
-from shared.storage import upload_video, download_to_temp, list_bucket_contents
+from shared.storage import upload_video, download_to_temp, list_bucket_contents, s3_upload
 
 
 API_URL = "http://localhost:8000/process"
@@ -45,11 +45,16 @@ def send_request(selected_video, reference_court, status_label, stats_button):
         if resp.status_code == 200:
             data = resp.json()
             ball_tp = json.loads(data["ball_tp"])
+            control_stats = json.loads(data["control_stats"])
             vid_name = data["vid_name"]
-
+            print(control_stats)
             x, y = possession_to_percentages(ball_tp)
             path = possession_plot(x, y, vid_name)
-            upload_img(vid_name) 
+            s3_upload(path, f"{vid_name}.png", "figures")
+
+            ctrl_path = control_plot(control_stats, vid_name)
+
+            s3_upload(ctrl_path, f"{vid_name}_mm.png", "figures")
 
             status_label.config(text="Done!", fg="green")
             stats_button.config(state="normal") 
@@ -63,18 +68,6 @@ def send_request(selected_video, reference_court, status_label, stats_button):
         status_label.config(text="Error!", fg="red")
         messagebox.showerror("Exception", str(e))
 
-def upload_img(vid_name):
-    BUCKET_NAME = "figures"
-
-    local_path = f"figures/ball_possession/{vid_name}.png"
-    key = f"ball_possession/{vid_name}.png"
-
-    uri = upload_video(local_path, key, BUCKET_NAME=BUCKET_NAME)
-
-    print("Uploaded possession plot to:", uri)
-    return uri
-
-
 def possession_plot(x, y, video_name):
     y_percent = np.array(y) * 100
 
@@ -82,8 +75,8 @@ def possession_plot(x, y, video_name):
     ax_right = ax_left.twinx()
 
     for i, val in enumerate(y_percent):
-        ax_left.bar(i, val, color="#9cb2a0", width=1.0)
-        ax_left.bar(i, 100 - val, bottom=val, color="#9eaec6", width=1.0)
+        ax_left.bar(i, val, color="#9eaec6", width=1.0)
+        ax_left.bar(i, 100 - val, bottom=val, color="#9cb2a0", width=1.0)
 
     ax_left.plot(x, y_percent, color="black", linewidth=2)
 
@@ -106,6 +99,51 @@ def possession_plot(x, y, video_name):
     filename = f"{video_name}.png"
     path = os.path.join(folder, filename)
 
+    fig.savefig(path, dpi=300)
+    plt.close(fig)
+
+    return path
+
+def control_plot(control_stats, video_name):
+    y_percent = []
+    for frame in control_stats:
+        a = frame.get("1", "0")
+        b = frame.get("2", "0")
+        total = a + b
+        if total == "0":
+            y_percent.append(50)
+        else:
+            y_percent.append((a / total) * 100)
+
+    y_percent = np.array(y_percent)
+    x = np.arange(len(y_percent))
+
+    fig, ax_left = plt.subplots(figsize=(14, 4))
+    ax_right = ax_left.twinx()
+
+    for i, val in enumerate(y_percent):
+        ax_left.bar(i, val, color="#9cb2a0", width=1.0)
+        ax_left.bar(i, 100 - val, color="#9eaec6", bottom=val, width=1.0)
+
+    ax_left.plot(x, y_percent, color="black", linewidth=2)
+
+    ax_left.set_ylim(0, 100)
+    ax_left.set_yticks(np.arange(0, 101, 10))
+    ax_left.set_ylabel("Team A Control (%)")
+
+    ax_right.set_ylim(100, 0)
+    ax_right.set_yticks(np.arange(0, 101, 10))
+    ax_right.set_ylabel("Team B Control (%)")
+
+    ax_left.set_xlim(0, len(x))
+    ax_left.set_xlabel("Frames")
+
+    plt.tight_layout()
+
+    folder = "figures/court_control"
+    os.makedirs(folder, exist_ok=True)
+
+    path = os.path.join(folder, f"{video_name}.png")
     fig.savefig(path, dpi=300)
     plt.close(fig)
 

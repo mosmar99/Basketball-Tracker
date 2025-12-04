@@ -12,8 +12,7 @@ class TDOverlay:
         self.minimap = cv2.imread(minimap)
         self.minimap = cv2.resize(self.minimap, (self.minimap_w, self.minimap_h), interpolation=cv2.INTER_LINEAR)
 
-        self.t1_color = t1_color
-        self.t2_color = t2_color
+        self.color = {1: t1_color, 2: t2_color}
 
         self.default_player_team_id = None
 
@@ -48,32 +47,35 @@ class TDOverlay:
 
         return topdown
 
-    def draw_voronoi(self, minimap, subdiv, colors, alpha=0.2):
+    def draw_voronoi(self, minimap, subdiv, teams, alpha=0.2):
         facets, _ = subdiv.getVoronoiFacetList([])
         vor_minimap = minimap.copy()
-
-        for facet, color in zip(facets, colors):
+        frame_control = {1: 0, 2: 0}
+        for facet, t in zip(facets, teams):
             facet = np.array(facet, dtype=np.int32)
 
-            cv2.fillConvexPoly(vor_minimap, facet, color, lineType=cv2.LINE_AA)
-            cv2.polylines(vor_minimap, [facet], True, (0, 0, 0), 1, lineType=cv2.LINE_AA)
+            frame_control[t] += cv2.contourArea(facet.astype(np.float32))
+
+            cv2.fillConvexPoly(vor_minimap, facet, self.color[t], lineType=cv2.LINE_AA)
+            cv2.polylines(vor_minimap, [facet], True, (0, 0, 0), 2, lineType=cv2.LINE_AA)
         
         result = cv2.addWeighted(vor_minimap, alpha, minimap, 1-alpha, 0)
-        return result
+        return result, frame_control
     
-    def draw_players(self, minimap, positions, colors):
-        for (mx, my), color in zip(positions, colors):
-            cv2.circle(minimap, (mx, my), 6, color, -1)
+    def draw_players(self, minimap, positions, teams):
+        for (mx, my), t in zip(positions, teams):
+            cv2.circle(minimap, (mx, my), 10, self.color[t], -1)
         return minimap
     
     def draw_overlay(self, frames, td_track, x=0, y=0):
         res = []
+        control = []
         for frame_idx, td_frame in enumerate(td_track):
             frame = frames[frame_idx].copy()
             minimap_frame = self.minimap.copy()
 
             subdiv = cv2.Subdiv2D((0, 0, self.minimap_w, self.minimap_h))
-            colors = []
+            team = []
             positions = []
 
             for _, player in td_frame.items():
@@ -84,16 +86,16 @@ class TDOverlay:
                 my = max(0, min(my, self.minimap_h - 1))
 
                 team_id = player["team_id"]
-                color = self.t1_color if team_id == 1 else self.t2_color
 
                 subdiv.insert((mx, my))
                 positions.append((mx, my))
-                colors.append(color)
+                team.append(team_id)
             
-            minimap_frame = self.draw_voronoi(minimap_frame, subdiv, colors)
-            minimap_frame = self.draw_players(minimap_frame, positions, colors)
+            minimap_frame, frame_control = self.draw_voronoi(minimap_frame, subdiv, team)
+            minimap_frame = self.draw_players(minimap_frame, positions, team)
             
             frame[x:self.minimap_h, y:self.minimap_w] = minimap_frame
+            control.append(frame_control)
             res.append(frame)
 
-        return res
+        return res, control
