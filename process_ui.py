@@ -47,7 +47,6 @@ def send_request(selected_video, reference_court, status_label, stats_button):
             ball_tp = json.loads(data["ball_tp"])
             control_stats = json.loads(data["control_stats"])
             vid_name = data["vid_name"]
-            print(control_stats)
             x, y = possession_to_percentages(ball_tp)
             path = possession_plot(x, y, vid_name)
             s3_upload(path, f"{vid_name}.png", "figures")
