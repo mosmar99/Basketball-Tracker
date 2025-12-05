@@ -4,6 +4,56 @@ import numpy as np
 class BallPossessionDrawer:
     def __init__(self):
         pass
+    
+
+    def draw_pi_stats(self, vid_frames, stats):
+        output_vid_frames = []
+        for frame_id, frame in enumerate(vid_frames):
+            if frame_id == 0:
+                output_vid_frames.append(frame)
+                continue
+            frame_drawn = self.draw_frame2(frame, frame_id, stats)
+            output_vid_frames.append(frame_drawn)
+        return output_vid_frames
+
+    def draw_frame2(self, frame, frame_id, stats):
+        font_scale = 1
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        thickness = 2
+
+        frame_h, frame_w = frame.shape[0], frame.shape[1]
+
+        # Rectangle position ABOVE the existing possession block
+        rect_x1 = int(frame_w * 0.01)
+        rect_y1 = int(frame_h * 0.68)
+        rect_x2 = int(frame_w * 0.42)
+        rect_y2 = int(frame_h * 0.81)
+
+        # Draw container box
+        box = frame.copy()
+        cv2.rectangle(box, (rect_x1, rect_y1), (rect_x2, rect_y2), (40, 40, 40), cv2.FILLED)
+        cv2.addWeighted(box, 0.8, frame, 0.2, 0, frame)
+
+        # Text positions
+        text_x = int(frame_w * 0.02)
+        y_base = int(frame_h * 0.73)
+        y_gap = int(frame_h * 0.05)
+
+        # Example stats structure:
+        # stats = { 1: {'Passes': 3, 'Interception': 2},
+        #           2: {'Passes': 5, 'Interception': 1} }
+
+        cv2.putText(frame, 
+                    f"Team A | Pass: {stats[frame_id][1]['Passes']} | INT: {stats[frame_id][1]['Interceptions']}",
+                    (text_x, y_base),
+                    font, font_scale, (255, 255, 255), thickness)
+
+        cv2.putText(frame,
+                    f"Team B | Pass: {stats[frame_id][2]['Passes']} | INT: {stats[frame_id][2]['Interceptions']}",
+                    (text_x, y_base + y_gap),
+                    font, font_scale, (255, 255, 255), thickness)
+
+        return frame
 
     def get_team_ball_possession(self, team_player_assignments, ball_acquisition_list):
         team_ball_possession = []
