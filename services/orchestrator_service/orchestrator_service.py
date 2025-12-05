@@ -23,6 +23,8 @@ async def process_video(video_name: str):
     court_reference = "imgs/full_court_warped.jpg" # Hardcoded, should be moved to bucket
     base_court = "imgs/court.png" # Hardcoded, should be moved to bucket
 
+    print("HELOOOOOO")
+
     # 1) Download raw video
     tmp_video_path = download_to_temp(key=key, bucket=bucket)
     vid_frames = read_video(tmp_video_path)
@@ -35,10 +37,14 @@ async def process_video(video_name: str):
     # 3) Get team assignments
     team_assignments_json = get_team_assignments_from_service(tmp_video_path, player_tracks)
     team_assignments = deserialize_team_assignments(team_assignments_json)
+    
+    print("pre anything")
 
     # 4) Ball possession
     ball_sensor = BallAcquisitionSensor()
     ball_acquisition_list = ball_sensor.detect_ball_possession(player_tracks, ball_tracks)
+    pi_stats = ball_sensor.get_ball_possession_statistics(team_assignments, ball_tracks)
+    print(pi_stats)
 
     H = get_homographies_from_service(tmp_video_path, court_reference)
 
@@ -60,6 +66,8 @@ async def process_video(video_name: str):
         team_assignments,
         ball_acquisition_list,
     )
+
+    output_vid_frames = poss_draw.draw_pi_stats(output_vid_frames, pi_stats)
 
     output_vid_frames = top_down_overlay.draw_overlay(
         output_vid_frames,
