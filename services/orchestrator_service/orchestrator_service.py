@@ -1,5 +1,7 @@
 import os
+import json
 import uvicorn
+import numpy as np
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from api_utils import (
@@ -11,7 +13,7 @@ from api_utils import (
     id_to_team_ball_acquisition
 )
 
-from mongo_writer import save_ball_possession
+from mongo_writer import save_ball_possession, save_control_stats
 from shared import download_to_temp, upload_video
 from utils import read_video, save_video
 from canvas import PlayerTrackDrawer, BallTrackDrawer, TDOverlay
@@ -24,7 +26,7 @@ async def process_video(video_name: str, reference_court: str):
     bucket = "basketball-raw-videos"
     ref_bucket = "basketball-panorama-warp"
     key = f"{video_name}.mp4"
-    base_court = "imgs/court.png" # Hardcoded, should be moved to bucket
+    base_court = "imgs/court.jpg" # Hardcoded, should be moved to bucket
 
     # 1) Download raw video
     tmp_video_path = download_to_temp(key=key, bucket=bucket)
@@ -52,7 +54,6 @@ async def process_video(video_name: str, reference_court: str):
     # 5) Draw overlays
     player_draw = PlayerTrackDrawer()
     ball_draw   = BallTrackDrawer()
-    top_down_overlay = TDOverlay(tmp_ref_path, base_court)
 
     player_vid_frames = player_draw.draw_annotations(
         vid_frames,
@@ -62,10 +63,12 @@ async def process_video(video_name: str, reference_court: str):
     )
     output_vid_frames = ball_draw.draw_annotations(player_vid_frames, ball_tracks)
 
+    top_down_overlay = TDOverlay(tmp_ref_path, base_court, xz=1280, yz=720)
     td_tracks = top_down_overlay.get_td_tracks(player_tracks, team_assignments, H)
+    minimap_frames = [np.zeros_like(frame) for frame in output_vid_frames]
 
-    output_vid_frames = top_down_overlay.draw_overlay(
-        output_vid_frames,
+    output_vid_minimap, control_stats = top_down_overlay.draw_overlay(
+        minimap_frames,
         td_tracks
     )
 
@@ -73,22 +76,33 @@ async def process_video(video_name: str, reference_court: str):
     out_path = f"output_videos/{video_name}.mp4"
     save_video(output_vid_frames, out_path)
 
+    minimap_out_path = f"output_videos/{video_name}_minimap.mp4"
+    save_video(output_vid_minimap, minimap_out_path)
+
     # 7) HTML req. proper .mp4 packaging, fix with ffmpeg
     fixed_path = f"output_videos/{video_name}_fixed.mp4"
     os.system(
         f"ffmpeg -y -i {out_path} -vcodec libx264 -preset fast -movflags +faststart {fixed_path}"
     )
 
+    minimap_fixed_path = f"output_videos/{video_name}_minimap_fixed.mp4"
+    os.system(
+        f"ffmpeg -y -i {minimap_out_path} -vcodec libx264 -preset fast -movflags +faststart {minimap_fixed_path}"
+    )
+
     # 8) upload vid to bucket
     upload_video(local_path=fixed_path, key=key, BUCKET_NAME="basketball-processed")
+    upload_video(local_path=minimap_fixed_path, key=key, BUCKET_NAME="basketball-minimap")
 
     # 9) upload ball possession statistics to mongodb
     save_ball_possession(video_name, ball_team_possessions)
+    save_control_stats(video_name, control_stats)
 
     return JSONResponse({
         "status": "completed",
         "ball_tp": f"{ball_team_possessions}",
-        "vid_name": f"{video_name}"
+        "vid_name": f"{video_name}",
+        "control_stats": json.dumps(control_stats)
     })
 
 if __name__ == "__main__":

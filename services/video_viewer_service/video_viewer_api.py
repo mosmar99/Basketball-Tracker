@@ -11,7 +11,7 @@ app = FastAPI(title="Video Viewer Service")
 @app.get("/stats_image/{video_name}")
 def serve_stats_image(video_name: str):
     s3 = get_s3()
-    key = f"ball_possession/{video_name}.png"
+    key = f"{video_name}.png"
 
     try:
         obj = s3.get_object(Bucket=BUCKET_FIGURES, Key=key)
@@ -21,19 +21,17 @@ def serve_stats_image(video_name: str):
 
     return Response(content=img_bytes, media_type="image/png")
 
-@app.get("/video_raw/{video_name}")
-def stream_raw(video_name: str):
+@app.get("/video/{bucket}/{video_name}")
+def stream_s3(bucket:str, video_name: str):
     s3 = get_s3()
     key = f"{video_name}.mp4"
 
     try:
-        obj = s3.get_object(Bucket=BUCKET_RAW, Key=key)
+        obj = s3.get_object(Bucket=bucket, Key=key)
     except Exception:
-        raise HTTPException(status_code=404, detail="Raw video not found")
+        raise HTTPException(status_code=404, detail="video not found")
 
     return StreamingResponse(obj["Body"], media_type="video/mp4")
-
-
 
 @app.get("/video_processed/{video_name}")
 async def stream_processed(request: Request, video_name: str):
@@ -74,7 +72,6 @@ async def stream_processed(request: Request, video_name: str):
 
     return Response(content, status_code=206, headers=headers)
 
-
 @app.get("/video_statistics/{video_name}")
 def video_statistics(video_name: str):
     html = f"""
@@ -83,12 +80,17 @@ def video_statistics(video_name: str):
 
         <h2>Raw Video: {video_name}</h2>
         <video width="100%" controls style="margin-bottom: 40px;">
-            <source src="/video_raw/{video_name}" type="video/mp4">
+            <source src="/video/basketball-raw-videos/{video_name}" type="video/mp4">
         </video>
 
         <h2>Processed Video: {video_name}</h2>
         <video width="100%" controls style="margin-bottom: 40px;">
-            <source src="/video_processed/{video_name}" type="video/mp4">
+            <source src="/video/basketball-processed/{video_name}" type="video/mp4">
+        </video>
+
+        <h2>Minimap View: {video_name}</h2>
+        <video width="100%" controls style="margin-bottom: 40px;">
+            <source src="/video/basketball-minimap/{video_name}" type="video/mp4">
         </video>
         
         <h2 style="text-decoration: underline;">Statistics</h2>
@@ -96,7 +98,12 @@ def video_statistics(video_name: str):
         <h3 style="margin-top: 20px;">Ball Possession Plot</h3>
         <img src="/stats_image/{video_name}"
              alt="Ball Possession Plot"
-             style="width:100%; border:1px solid #ccc; margin-top:10px;"/
+             style="width:100%; border:1px solid #ccc; margin-top:10px;"/>
+
+        <h3 style="margin-top: 20px;">Court Control Plot</h3>
+        <img src="/stats_image/{video_name}_mm"
+             alt="Ball Possession Plot"
+             style="width:100%; border:1px solid #ccc; margin-top:10px;"/>
 
     </body>
     </html>
