@@ -1,5 +1,5 @@
 from utils import read_video, save_video
-from tracking import PlayerTracker, BallTracker, get_production_model_path
+from tracking import PlayerTracker, BallTracker, get_player_production_model_path
 from canvas import PlayerTrackDrawer, BallTrackDrawer, BallPossessionDrawer, TDOverlay
 from team_assigner import TeamAssigner
 from ball_acq import BallAcquisitionSensor

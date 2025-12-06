@@ -5,7 +5,7 @@ import uvicorn
 import tempfile
 from pathlib import Path
 
-from tracking import PlayerTracker, BallTracker, get_production_model_path
+from tracking import PlayerTracker, BallTracker, get_player_production_model_path, get_ball_production_model_path
 from utils import read_video
 
 def serialize_tracks(tracks):
@@ -29,12 +29,13 @@ def serialize_tracks(tracks):
 
 app = FastAPI()
 
-model_path = get_production_model_path()
+player_model_path = get_player_production_model_path()
+ball_model_path = get_ball_production_model_path()
 
 @app.post("/track")
 async def track_video(file: UploadFile = File(...)):
-    player_tracker = PlayerTracker(model_path=model_path)
-    ball_tracker = BallTracker(model_path=model_path)
+    player_tracker = PlayerTracker(model_path=player_model_path)
+    ball_tracker = BallTracker(model_path=ball_model_path)
 
     with tempfile.TemporaryDirectory() as tmpdir:
         tmp_path = Path(tmpdir) / file.filename
