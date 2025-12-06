@@ -35,7 +35,7 @@ class BallTracker():
                 class_id = frame_detection[3]
                 conf = frame_detection[2]
 
-                if class_id == class_names_inv["Ball"]:
+                if class_id == class_names_inv["basketball"]:
                     if max_conf < conf:
                         picked_bbox = bbox
                         max_conf = conf
