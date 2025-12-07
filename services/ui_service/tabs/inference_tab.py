@@ -4,7 +4,7 @@ import requests
 import gradio as gr
 from shared.storage import upload_video
 import ui_service.config as config
-from ui_service.plots import possession_plot, control_plot
+from ui_service.plots import possession_plot, control_plot, pi_plots
 from ui_service.utils import fetch_local_resource, list_courts
 
 def run_inference(video_file, court_name):
@@ -33,6 +33,7 @@ def run_inference(video_file, court_name):
     
     plot_poss = possession_plot(json.loads(data["ball_tp"]))
     plot_ctrl = control_plot(json.loads(data["control_stats"]))
+    plot_pass, plot_intr = pi_plots(json.loads(data["pi_stats"]))
     
     url_proc = f"{config.VIEWER_BASE}/video/{config.BUCKET_PROCESSED}/{vid_name}"
     url_mini = f"{config.VIEWER_BASE}/video/{config.BUCKET_MINIMAP}/{vid_name}"
@@ -41,7 +42,9 @@ def run_inference(video_file, court_name):
         fetch_local_resource(url_proc, ".mp4"),
         fetch_local_resource(url_mini, ".mp4"),
         plot_poss, 
-        plot_ctrl, 
+        plot_ctrl,
+        plot_pass,
+        plot_intr,
         "Processing Complete!"
     )
 
@@ -68,10 +71,14 @@ def render_inference_tab():
                 with gr.Row():
                     plot_poss = gr.Plot(label="Possession")
                     plot_ctrl = gr.Plot(label="Court Control")
+                
+                with gr.Row():
+                    plot_pass = gr.Plot(label="Passes")
+                    plot_intr = gr.Plot(label="Interceptions")
 
         refresh_btn.click(lambda: gr.Dropdown(choices=list_courts()), outputs=inf_court_drp)
         inf_run_btn.click(
             run_inference,
             inputs=[inf_video_in, inf_court_drp],
-            outputs=[vid_proc, vid_mini, plot_poss, plot_ctrl, inf_status]
+            outputs=[vid_proc, vid_mini, plot_poss, plot_ctrl, plot_pass, plot_intr, inf_status]
         )
