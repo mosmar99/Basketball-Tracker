@@ -23,6 +23,7 @@ COPY services/ui_service/ ./ui_service/
 
 # 4. Gradio usually runs on 7860, not 8000
 EXPOSE 7860
+ENV PYTHONUNBUFFERED=1
 
 # 5. Point to the file inside the folder (assuming your main file is app.py)
 CMD ["python", "ui_service/service.py"]
