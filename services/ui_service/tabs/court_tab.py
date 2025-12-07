@@ -3,7 +3,7 @@ import cv2
 import json
 import requests
 import gradio as gr
-import services.ui_service.config as config
+import ui_service.config as config
 from shared.storage import upload_video, download_to_temp
 
 def stitch(video_path):

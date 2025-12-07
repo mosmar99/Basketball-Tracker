@@ -45,6 +45,29 @@ services:
               count: all
               capabilities: [gpu]
 
+  ui-service:
+      build:
+        context: .
+        dockerfile: services/ui_service/Dockerfile
+      image: ui-service
+      container_name: ui-service
+      ports:
+        - "7860:7860"
+      environment:
+        MINIO_ENDPOINT: "http://minio:9000"
+        MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+        MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
+
+        API_URL_PROCESS: "http://orchestrator_service:8000/process"
+        API_URL_STITCH: "http://court-service:8000/stitch"
+        API_URL_WARP: "http://court-service:8000/warp_panorama"
+        API_URL_VIEWER: "http://video_viewer_service:8000"
+      depends_on:
+        - minio
+        - orchestrator_service
+        - court-service
+        - video_viewer_service
+
   team_assigner_service:
     image: basketball-team-assigner
     build:

@@ -1,6 +1,6 @@
 import gradio as gr
-from .tabs.court_tab import render_court_tab
-from .tabs.inference_tab import render_inference_tab
+from ui_service.tabs.court_tab import render_court_tab
+from ui_service.tabs.inference_tab import render_inference_tab
 
 with gr.Blocks(title="Basketball Analysis") as demo:
     gr.Markdown("# Basketball Analysis")

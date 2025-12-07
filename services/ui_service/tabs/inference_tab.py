@@ -3,9 +3,9 @@ import json
 import requests
 import gradio as gr
 from shared.storage import upload_video
-import services.ui_service.config as config
-from ..plots import possession_plot, control_plot
-from ..utils import fetch_local_resource, list_courts
+import ui_service.config as config
+from ui_service.plots import possession_plot, control_plot
+from ui_service.utils import fetch_local_resource, list_courts
 
 def run_inference(video_file, court_name):
     if not video_file or not court_name:

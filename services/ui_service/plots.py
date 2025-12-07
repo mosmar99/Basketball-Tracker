@@ -1,5 +1,4 @@
 import matplotlib.pyplot as plt
-import pandas as pd
 import numpy as np
 
 def possession_plot(ball_tp):
