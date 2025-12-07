@@ -1,9 +1,9 @@
-import gradio as gr
-import requests
-import json
-import cv2
 import os
+import cv2
+import json
+import requests
 import numpy as np
+import gradio as gr
 import ui_service.config as config
 from shared.storage import upload_video, download_to_temp
 
