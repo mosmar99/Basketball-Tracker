@@ -46,6 +46,9 @@ async def process_video(video_name: str, reference_court: str):
     ball_sensor = BallAcquisitionSensor()
     ball_acquisition_list = ball_sensor.detect_ball_possession(player_tracks, ball_tracks)
 
+    # 4.1) Passes and interceptions per team
+    passes_and_interceptions = ball_sensor.get_ball_possession_statistics(team_assignments, ball_tracks)
+
     ball_team_possessions = id_to_team_ball_acquisition(ball_acquisition_list,
                                                         team_assignments)   
 
@@ -102,7 +105,8 @@ async def process_video(video_name: str, reference_court: str):
         "status": "completed",
         "ball_tp": f"{ball_team_possessions}",
         "vid_name": f"{video_name}",
-        "control_stats": json.dumps(control_stats)
+        "control_stats": json.dumps(control_stats),
+        'pi_stats': json.dumps(passes_and_interceptions)
     })
 
 if __name__ == "__main__":

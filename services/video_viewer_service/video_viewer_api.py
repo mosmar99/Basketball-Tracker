@@ -105,6 +105,16 @@ def video_statistics(video_name: str):
              alt="Ball Possession Plot"
              style="width:100%; border:1px solid #ccc; margin-top:10px;"/>
 
+        <h3 style="margin-top: 20px;">Passes Per Team Plot</h3>
+        <img src="/stats_image/{video_name}_passes"
+             alt="Ball Possession Plot"
+             style="width:100%; border:1px solid #ccc; margin-top:10px;"/>
+        
+        <h3 style="margin-top: 20px;">Interceptions Per Team Plot</h3>
+        <img src="/stats_image/{video_name}_interceptions"
+             alt="Ball Possession Plot"
+             style="width:100%; border:1px solid #ccc; margin-top:10px;"/>
+
     </body>
     </html>
     """

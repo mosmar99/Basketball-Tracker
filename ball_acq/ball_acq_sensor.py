@@ -6,8 +6,11 @@ from utils import get_straight_line_distance, get_center_bbox
 class BallAcquisitionSensor():
     def __init__(self):
         self.possession_threshold = 50 # max distance from player
-        self.min_ball_frames = 4 # min X frames intersection with a persons boundary to consider acquision
+        self.min_ball_frames = 6 # min X frames intersection with a persons boundary to consider acquision
         self.containment_threshold_IoU = 0.8 # if ball is overlapping by a player to 80 %, consider that a ball acquisition
+        self.acq_history = []
+        self.res = {1:{'Passes': 0, 'Interceptions': 0}, 2:{'Passes': 0, 'Interceptions': 0}}
+        print(self.res)
 
     def get_bbox_assignment_points(self, player_bbox, ball_center):
         ball_center_x, ball_center_y = ball_center[0], ball_center[1]
@@ -91,7 +94,7 @@ class BallAcquisitionSensor():
             ball_bbox = ball_annotation.get("bbox", [])
             if not ball_bbox:
                 continue
-
+            
             ball_center = get_center_bbox(ball_bbox)
             best_player_id = self.find_best_player_for_ball(player_tracks[frame_id], ball_center, ball_bbox)
 
@@ -101,6 +104,8 @@ class BallAcquisitionSensor():
 
                 if consecutive_possession_counts[best_player_id] >= self.min_ball_frames:
                     ball_possessions[frame_id] = best_player_id
+                    if not self.acq_history or self.acq_history[-1] != best_player_id:
+                        self.acq_history.append((frame_id, best_player_id))
 
             else:
                 consecutive_possession_counts = {}
@@ -113,3 +118,44 @@ class BallAcquisitionSensor():
 
         return ball_possessions
 
+    def get_ball_possession_statistics(self, team_assignments, ball_tracks):
+        num_frames = len(ball_tracks)
+        test = [
+            {1: {'Passes': 0, 'Interceptions': 0}, 
+            2: {'Passes': 0, 'Interceptions': 0}} 
+            for _ in range(num_frames)
+        ]
+        j = 0
+        l = len(self.acq_history)
+        for i in range(1, num_frames):
+            test[i] = {
+                1: test[i-1][1].copy(),
+                2: test[i-1][2].copy()
+            }
+
+            if (j < l - 1):
+                f_id, current_player = self.acq_history[j]
+                _, next_player = self.acq_history[j+1]
+            else:
+                continue
+
+            if f_id != i:
+                continue
+            
+            j += 1
+            if current_player == next_player:
+                continue
+
+            frame_idx = i
+            team_current_player = team_assignments[frame_idx].get(current_player)
+            team_next_player    = team_assignments[frame_idx].get(next_player)
+
+            if not team_next_player:
+                continue
+
+            if team_current_player == team_next_player:
+                test[i][team_current_player]['Passes'] = test[i-1][team_current_player]['Passes'] + 1
+            elif team_current_player != team_next_player:
+                test[i][team_next_player]['Interceptions'] = test[i-1][team_next_player]['Interceptions'] + 1
+
+        return test
