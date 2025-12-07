@@ -1,7 +1,7 @@
 import requests
 import tempfile
 import shutil
-from .config import BUCKET_COURTS
+from ui_service.config import BUCKET_COURTS
 from shared.storage import list_bucket_contents
 
 def fetch_local_resource(url, suffix=""):
