@@ -50,7 +50,11 @@ async def stitch_panorama_ep(video: UploadFile = File(...)):
     }
 
 @app.post("/warp_panorama")
-async def warp_panorama_ep(panorama_uri: str = Form(...), points_json_str: str = Form(...)):
+async def warp_panorama_ep(
+    panorama_uri: str = Form(...), 
+    points_json_str: str = Form(...),
+    court_name: str = Form(None)
+):
     # job_id = str(uuid.uuid4())
     points_data = json.loads(points_json_str)
 
@@ -62,20 +66,29 @@ async def warp_panorama_ep(panorama_uri: str = Form(...), points_json_str: str =
     local_panorama_path = download_to_temp(key, bucket)
 
     panorama_img = cv2.imread(local_panorama_path)
-
     warped_img = warp_image(panorama_img, source_points)
     
-    tmp_warped_path = f"/tmp/{key}"
+    if court_name and court_name.strip():
+        final_filename = court_name.strip()
+        if not final_filename.lower().endswith(('.jpg', '.jpeg', '.png')):
+            final_filename += ".jpg" 
+    else:
+        final_filename = key
+
+    tmp_warped_path = f"/tmp/{final_filename}"
     cv2.imwrite(tmp_warped_path, warped_img)
-    warped_s3_uri = s3_upload(tmp_warped_path, key, BUCKET_NAME="basketball-panorama-warp")
+    
+    warped_s3_uri = s3_upload(tmp_warped_path, final_filename, BUCKET_NAME="basketball-panorama-warp")
 
     h, w = warped_img.shape[:2]
 
-    os.remove(local_panorama_path)
-    os.remove(tmp_warped_path)
+    if os.path.exists(local_panorama_path):
+        os.remove(local_panorama_path)
+    if os.path.exists(tmp_warped_path):
+        os.remove(tmp_warped_path)
 
     return {
-        "job_id": key,
+        "job_id": final_filename, # Return the new name
         "warped_image_uri": warped_s3_uri,
         "width": w,
         "height": h,
