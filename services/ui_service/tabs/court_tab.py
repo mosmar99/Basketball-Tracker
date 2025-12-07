@@ -123,7 +123,7 @@ def render_court_tab():
                 annotation_img = gr.Image(label="Click the 4 Court Corners", interactive=True)
                 
                 with gr.Row():
-                    court_name_in = gr.Textbox(label="Court Name", placeholder="Lakers", scale=2)
+                    court_name_in = gr.Textbox(label="Court Name", placeholder="Enter court name...", scale=2)
                     reset_btn = gr.Button("Reset Points", scale=1)
                     warp_btn = gr.Button("Save Court", variant="stop", scale=1)
         
