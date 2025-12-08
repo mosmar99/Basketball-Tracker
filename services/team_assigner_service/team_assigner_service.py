@@ -7,7 +7,7 @@ from pathlib import Path
 import json
 
 from utils import read_video
-from team_assigner import TeamAssigner
+from team_assigner_service.processing.team_assigner import TeamAssigner
 
 def serialize_team_assignments(assignments):
     out = []
@@ -23,10 +23,7 @@ def serialize_team_assignments(assignments):
 
 app = FastAPI()
 
-team_assigner = TeamAssigner(
-        team_A="WHITE shirt",
-        team_B="DARK BLUE shirt"
-    )
+team_assigner = TeamAssigner(crop_factor=0.3)
 
 @app.post("/assign_teams")
 async def assign_teams(

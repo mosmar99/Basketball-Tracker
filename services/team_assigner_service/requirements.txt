@@ -4,6 +4,5 @@ requests
 boto3
 opencv-python-headless
 pillow
-transformers
 python-multipart
-ultralytics
+scikit-learn
