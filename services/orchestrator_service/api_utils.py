@@ -1,10 +1,7 @@
 import os
 import json
 import requests
-
-DETECTOR_URL = os.getenv("DETECTOR_URL", "http://localhost:8000/track")
-ASSIGNER_URL = os.getenv("TEAM_ASSIGNER_URL", "http://localhost:8001/assign_teams")
-HOMOGRAPHY_URL = os.getenv("HOMOGRAPHY_URL", "http://localhost:8003/assign_teams")
+from .config import CONFIG
 
 def id_to_team_ball_acquisition(ball_acq_list, team_assignments):
     team_possession = []
@@ -19,7 +16,7 @@ def id_to_team_ball_acquisition(ball_acq_list, team_assignments):
     return team_possession
 
 def get_team_assignments_from_service(local_video_path: str, player_tracks):
-    url = ASSIGNER_URL
+    url = CONFIG.assigner_url
     tracks_json_str = json.dumps(player_tracks)
     with open(local_video_path, "rb") as f:
         files = {
@@ -32,7 +29,7 @@ def get_team_assignments_from_service(local_video_path: str, player_tracks):
     return data["team_assignments"]
 
 def get_tracks_from_service(local_video_path: str):
-    url = DETECTOR_URL
+    url = CONFIG.detector_url
     with open(local_video_path, "rb") as f:
         files = {"file": (local_video_path, f, "video/mp4")}
         r = requests.post(url, files=files)
@@ -68,7 +65,7 @@ def get_homographies_from_service(local_video_path: str, local_reference_path: s
             "reference": ("reference.jpg", reference_file, "image/jpeg")
         }
         
-        r = requests.post(HOMOGRAPHY_URL, files=files)
+        r = requests.post(CONFIG.homography_url, files=files)
     
     r.raise_for_status()
     data = r.json()

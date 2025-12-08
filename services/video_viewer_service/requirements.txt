@@ -3,3 +3,4 @@ uvicorn
 boto3
 python-multipart
 python-dotenv
+prometheus-fastapi-instrumentator

@@ -7,3 +7,4 @@ pillow
 transformers
 python-multipart
 ultralytics
+prometheus-fastapi-instrumentator

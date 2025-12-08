@@ -9,6 +9,8 @@ import json
 from utils import read_video
 from team_assigner import TeamAssigner
 
+from prometheus_fastapi_instrumentator import Instrumentator
+
 def serialize_team_assignments(assignments):
     out = []
     for frame in assignments:
@@ -22,6 +24,7 @@ def serialize_team_assignments(assignments):
     return out
 
 app = FastAPI()
+Instrumentator().instrument(app).expose(app)
 
 team_assigner = TeamAssigner(
         team_A="WHITE shirt",

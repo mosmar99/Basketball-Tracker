@@ -1,12 +1,13 @@
 from fastapi import FastAPI, HTTPException, Response, Request
 from fastapi.responses import StreamingResponse, HTMLResponse
+from prometheus_fastapi_instrumentator import Instrumentator
 from shared.storage import get_s3
 
 BUCKET_RAW = "basketball-raw-videos"
 BUCKET_PROCESSED = "basketball-processed"
 BUCKET_FIGURES = "figures"
-
 app = FastAPI(title="Video Viewer Service")
+Instrumentator().instrument(app).expose(app)
 
 @app.get("/stats_image/{video_name}")
 def serve_stats_image(video_name: str):

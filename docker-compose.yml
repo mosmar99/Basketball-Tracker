@@ -5,6 +5,8 @@ services:
       context: .
       dockerfile: services/detector_service/Dockerfile
     container_name: detector_service
+    ports:
+      - "8001:8000"
     networks:
       - shared
     environment:
@@ -20,11 +22,6 @@ services:
             - driver: nvidia
               count: all
               capabilities: [gpu]
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.detector.rule=Host(`detector.internal`)"
-      - "traefik.http.routers.detector.entrypoints=web"
-      - "traefik.http.services.detector.loadbalancer.server.port=8000"
 
   court-service:
     build:
@@ -32,6 +29,8 @@ services:
       dockerfile: services/court_service/Dockerfile
     image: court-service
     container_name: court-service
+    ports:
+      - "8003:8000"
     networks:
       - shared
     environment:
@@ -49,36 +48,31 @@ services:
             - driver: nvidia
               count: all
               capabilities: [gpu]
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.court.rule=Host(`court.internal`)"
-      - "traefik.http.routers.court.entrypoints=web"
-      - "traefik.http.services.court.loadbalancer.server.port=8000"
 
   ui-service:
-      build:
-        context: .
-        dockerfile: services/ui_service/Dockerfile
-      image: ui-service
-      container_name: ui-service
-      networks:
-        - shared      
-      ports:
-        - "7860:7860"
-      environment:
-        MINIO_ENDPOINT: "http://minio:9000"
-        MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
-        MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
+    build:
+      context: .
+      dockerfile: services/ui_service/Dockerfile
+    image: ui-service
+    container_name: ui-service
+    ports:
+      - "7860:7860"
+    networks:
+      - shared      
+    environment:
+      MINIO_ENDPOINT: "http://minio:9000"
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
 
-        API_URL_PROCESS: "http://orchestrator_service:8000/process"
-        API_URL_STITCH: "http://court-service:8000/stitch"
-        API_URL_WARP: "http://court-service:8000/warp_panorama"
-        API_URL_VIEWER: "http://video_viewer_service:8000"
-      depends_on:
-        - minio
-        - orchestrator_service
-        - court-service
-        - video_viewer_service
+      API_URL_PROCESS: "http://orchestrator_service:8000/process"
+      API_URL_STITCH: "http://court-service:8000/stitch"
+      API_URL_WARP: "http://court-service:8000/warp_panorama"
+      API_URL_VIEWER: "http://video_viewer_service:8000"
+    depends_on:
+      - minio
+      - orchestrator_service
+      - court-service
+      - video_viewer_service
 
   team_assigner_service:
     image: basketball-team-assigner
@@ -86,10 +80,10 @@ services:
       context: .
       dockerfile: services/team_assigner_service/Dockerfile
     container_name: team_assigner_service
-    networks:
-      - shared      
     ports:
       - "8002:8000"
+    networks:
+      - shared      
     environment:
       MINIO_ENDPOINT: "http://minio:9000"
       ROBOFLOW_API_KEY: ${ROBOFLOW_API_KEY}
@@ -103,11 +97,6 @@ services:
             - driver: nvidia
               count: all
               capabilities: [gpu]
-  labels:
-    - "traefik.enable=true"
-    - "traefik.http.routers.team.rule=Host(`team.internal`)"
-    - "traefik.http.routers.team.entrypoints=web"
-    - "traefik.http.services.team.loadbalancer.server.port=8000"
 
   video_viewer_service:
     build:
@@ -115,10 +104,10 @@ services:
       dockerfile: services/video_viewer_service/Dockerfile
     image: basketball-video-viewer
     container_name: video_viewer_service
-    networks:
-      - shared      
     ports:
       - "8004:8000"
+    networks:
+      - shared      
     environment:
       MINIO_ENDPOINT: "http://minio:9000"
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
@@ -132,10 +121,10 @@ services:
       context: .
       dockerfile: services/orchestrator_service/Dockerfile
     container_name: orchestrator_service
-    networks:
-      - shared      
     ports:
       - "8000:8000"
+    networks:
+      - shared      
     depends_on:
       - detector_service
       - team_assigner_service
@@ -179,6 +168,8 @@ services:
   mongo-express:
     image: mongo-express:1.0.2
     container_name: mongo-express
+    ports:
+      - "8081:8081"
     networks:
       - shared      
     environment:
@@ -191,11 +182,16 @@ services:
       ME_CONFIG_BASICAUTH_PASSWORD: password
     depends_on:
       - mongodb
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.mongo-express.rule=Host(`mongo-express.local`)"
-      - "traefik.http.routers.mongo-express.entrypoints=web"
-      - "traefik.http.services.mongo-express.loadbalancer.server.port=8081"
+
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    networks:
+      - shared
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
 
 volumes:
   minio-data:

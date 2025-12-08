@@ -10,3 +10,4 @@ supervision
 pandas
 wandb
 python-dotenv
+prometheus-fastapi-instrumentator

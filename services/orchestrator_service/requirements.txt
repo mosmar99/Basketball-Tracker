@@ -8,3 +8,4 @@ boto3
 botocore
 python-dotenv
 pymongo
+prometheus-fastapi-instrumentator

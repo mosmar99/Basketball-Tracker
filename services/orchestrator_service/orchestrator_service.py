@@ -4,29 +4,37 @@ import uvicorn
 import numpy as np
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
-from api_utils import (
+from prometheus_fastapi_instrumentator import Instrumentator
+
+from orchestrator_service.api_utils import (
     get_tracks_from_service,
     get_team_assignments_from_service,
     deserialize_tracks,
     deserialize_team_assignments,
     get_homographies_from_service,
-    id_to_team_ball_acquisition
+    id_to_team_ball_acquisition,
 )
 
-from mongo_writer import save_ball_possession, save_control_stats
+from orchestrator_service.mongo_writer import (
+    save_ball_possession,
+    save_control_stats,
+)
+
 from shared import download_to_temp, upload_video
 from utils import read_video, save_video
 from canvas import PlayerTrackDrawer, BallTrackDrawer, TDOverlay
 from ball_acq import BallAcquisitionSensor
 
 app = FastAPI()
+Instrumentator().instrument(app).expose(app)
 
 @app.post("/process")
 async def process_video(video_name: str, reference_court: str):
     bucket = "basketball-raw-videos"
     ref_bucket = "basketball-panorama-warp"
     key = f"{video_name}.mp4"
-    base_court = "imgs/court.jpg" # Hardcoded, should be moved to bucket
+    base_path = os.path.dirname(__file__)
+    base_court = os.path.join(base_path, "imgs", "court.jpg")
 
     # 1) Download raw video
     tmp_video_path = download_to_temp(key=key, bucket=bucket)
