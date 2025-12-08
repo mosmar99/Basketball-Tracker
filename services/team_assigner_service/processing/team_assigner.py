@@ -73,7 +73,7 @@ class TeamAssigner:
 
         for pid in unique_pids:
             # Average features per player id for global embedding (Remove noise)
-            if len(player_features_map[pid]) > 5: # Id should exist for alteast 5 frames to be used in kmeans
+            if len(player_features_map[pid]) > 3: # Id should exist for alteast 5 frames to be used in kmeans
                 feats = np.array(player_features_map[pid])
                 avg_feat = np.mean(feats, axis=0)
                 averaged_features.append(avg_feat)
