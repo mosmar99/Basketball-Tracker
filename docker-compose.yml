@@ -7,8 +7,6 @@ services:
     container_name: detector_service
     networks:
       - shared
-    ports:
-      - "8001:8000"
     environment:
       MINIO_ENDPOINT: "http://minio:9000"
       ROBOFLOW_API_KEY: ${ROBOFLOW_API_KEY}
@@ -22,6 +20,11 @@ services:
             - driver: nvidia
               count: all
               capabilities: [gpu]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.detector.rule=Host(`detector.internal`)"
+      - "traefik.http.routers.detector.entrypoints=web"
+      - "traefik.http.services.detector.loadbalancer.server.port=8000"
 
   court-service:
     build:
@@ -31,8 +34,6 @@ services:
     container_name: court-service
     networks:
       - shared
-    ports:
-      - "8003:8000"
     environment:
       MINIO_ENDPOINT: "http://minio:9000"
       ROBOFLOW_API_KEY: ${ROBOFLOW_API_KEY}
@@ -48,6 +49,11 @@ services:
             - driver: nvidia
               count: all
               capabilities: [gpu]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.court.rule=Host(`court.internal`)"
+      - "traefik.http.routers.court.entrypoints=web"
+      - "traefik.http.services.court.loadbalancer.server.port=8000"
 
   ui-service:
       build:
@@ -97,6 +103,11 @@ services:
             - driver: nvidia
               count: all
               capabilities: [gpu]
+  labels:
+    - "traefik.enable=true"
+    - "traefik.http.routers.team.rule=Host(`team.internal`)"
+    - "traefik.http.routers.team.entrypoints=web"
+    - "traefik.http.services.team.loadbalancer.server.port=8000"
 
   video_viewer_service:
     build:
@@ -170,8 +181,6 @@ services:
     container_name: mongo-express
     networks:
       - shared      
-    ports:
-      - "8081:8081"
     environment:
       ME_CONFIG_MONGODB_ADMINUSERNAME: root
       ME_CONFIG_MONGODB_ADMINPASSWORD: password
@@ -182,7 +191,11 @@ services:
       ME_CONFIG_BASICAUTH_PASSWORD: password
     depends_on:
       - mongodb
-
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.mongo-express.rule=Host(`mongo-express.local`)"
+      - "traefik.http.routers.mongo-express.entrypoints=web"
+      - "traefik.http.services.mongo-express.loadbalancer.server.port=8081"
 
 volumes:
   minio-data:
