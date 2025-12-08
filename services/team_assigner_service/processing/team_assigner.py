@@ -11,13 +11,14 @@ class TeamAssigner:
     def __init__(self, crop_factor = 0.3):
         self.crop_factor = crop_factor
 
-    def get_center_crop(self, img_array, crop_factor=0.4):
+    def get_center_crop(self, img_array, crop_factor=0.4, skew_factor=0.1):
         h, w, _ = img_array.shape
         h_center, w_center = h // 2, w // 2
         h_crop, w_crop = int(h * crop_factor), int(w * crop_factor)
-        
-        y1 = max(0, h_center - h_crop // 2)
-        y2 = min(h, h_center + h_crop // 2)
+        h_skew = int(h * skew_factor)
+
+        y1 = max(0, h_center - h_crop // 2 - h_skew)
+        y2 = min(h, h_center + h_crop // 2 - h_skew)
         x1 = max(0, w_center - w_crop // 2)
         x2 = min(w, w_center + w_crop // 2)
         
@@ -32,9 +33,10 @@ class TeamAssigner:
             img_crop = self.get_center_crop(img, crop_factor=self.crop_factor)
 
             hsv = cv2.cvtColor(img_crop, cv2.COLOR_RGB2HSV)
-            hist = cv2.calcHist([hsv], [0, 1, 2], None, bins, [0, 180, 0, 256, 0, 256])
 
+            hist = cv2.calcHist([hsv], [0, 1, 2], None, bins, [0, 180, 0, 256, 0, 256])
             cv2.normalize(hist, hist)
+
             features.append(hist.flatten())
 
         return np.array(features)
@@ -71,9 +73,12 @@ class TeamAssigner:
 
         for pid in unique_pids:
             # Average features per player id for global embedding (Remove noise)
-            feats = np.array(player_features_map[pid])
-            avg_feat = np.mean(feats, axis=0)
-            averaged_features.append(avg_feat)
+            if len(player_features_map[pid]) > 5: # Id should exist for alteast 5 frames to be used in kmeans
+                feats = np.array(player_features_map[pid])
+                avg_feat = np.mean(feats, axis=0)
+                averaged_features.append(avg_feat)
+            else:
+                averaged_features.append(averaged_features[-1])
 
         if not unique_pids:
             return frame_assignments

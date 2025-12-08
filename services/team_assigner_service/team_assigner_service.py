@@ -23,7 +23,7 @@ def serialize_team_assignments(assignments):
 
 app = FastAPI()
 
-team_assigner = TeamAssigner(crop_factor=0.3)
+team_assigner = TeamAssigner(crop_factor=0.2)
 
 @app.post("/assign_teams")
 async def assign_teams(
