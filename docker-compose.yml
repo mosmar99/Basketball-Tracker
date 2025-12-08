@@ -5,6 +5,8 @@ services:
       context: .
       dockerfile: services/detector_service/Dockerfile
     container_name: detector_service
+    networks:
+      - shared
     ports:
       - "8001:8000"
     environment:
@@ -27,6 +29,8 @@ services:
       dockerfile: services/court_service/Dockerfile
     image: court-service
     container_name: court-service
+    networks:
+      - shared
     ports:
       - "8003:8000"
     environment:
@@ -51,6 +55,8 @@ services:
         dockerfile: services/ui_service/Dockerfile
       image: ui-service
       container_name: ui-service
+      networks:
+        - shared      
       ports:
         - "7860:7860"
       environment:
@@ -74,6 +80,8 @@ services:
       context: .
       dockerfile: services/team_assigner_service/Dockerfile
     container_name: team_assigner_service
+    networks:
+      - shared      
     ports:
       - "8002:8000"
     environment:
@@ -96,6 +104,8 @@ services:
       dockerfile: services/video_viewer_service/Dockerfile
     image: basketball-video-viewer
     container_name: video_viewer_service
+    networks:
+      - shared      
     ports:
       - "8004:8000"
     environment:
@@ -111,6 +121,8 @@ services:
       context: .
       dockerfile: services/orchestrator_service/Dockerfile
     container_name: orchestrator_service
+    networks:
+      - shared      
     ports:
       - "8000:8000"
     depends_on:
@@ -129,6 +141,8 @@ services:
   minio:
     image: minio/minio
     container_name: minio
+    networks:
+      - shared      
     ports:
       - "9000:9000"
       - "9001:9001"
@@ -141,6 +155,8 @@ services:
   mongodb:
     image: mongo:6.0
     container_name: mongodb
+    networks:
+        - shared      
     ports:
       - "27017:27017"
     environment:
@@ -152,6 +168,8 @@ services:
   mongo-express:
     image: mongo-express:1.0.2
     container_name: mongo-express
+    networks:
+      - shared      
     ports:
       - "8081:8081"
     environment:
@@ -165,6 +183,11 @@ services:
     depends_on:
       - mongodb
 
+
 volumes:
   minio-data:
   mongo-data:
+
+networks:
+  shared:
+    external: true
