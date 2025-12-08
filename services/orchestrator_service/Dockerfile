@@ -17,7 +17,6 @@ COPY utils /app/utils
 COPY canvas /app/canvas
 COPY shared /app/shared
 COPY ball_acq /app/ball_acq
-COPY team_assigner /app/team_assigner
 
 RUN pip install --no-cache-dir -r requirements.txt
 

@@ -30,10 +30,16 @@ def run_inference(video_file, court_name):
 
     data = resp.json()
     vid_name = data["vid_name"]
-    
-    plot_poss = possession_plot(json.loads(data["ball_tp"]))
-    plot_ctrl = control_plot(json.loads(data["control_stats"]))
-    plot_pass, plot_intr = pi_plots(json.loads(data["pi_stats"]))
+
+    team_colors = json.loads(data["team_colors"])
+    team_hex_colors = {
+        k: '#%02x%02x%02x' % tuple(reversed(v)) 
+        for k, v in team_colors.items()
+    }
+
+    plot_poss = possession_plot(json.loads(data["ball_tp"]), team_hex_colors["1"], team_hex_colors["2"])
+    plot_ctrl = control_plot(json.loads(data["control_stats"]), team_hex_colors["1"], team_hex_colors["2"])
+    plot_pass, plot_intr = pi_plots(json.loads(data["pi_stats"]), team_hex_colors["1"], team_hex_colors["2"])
     
     url_proc = f"{config.VIEWER_BASE}/video/{config.BUCKET_PROCESSED}/{vid_name}"
     url_mini = f"{config.VIEWER_BASE}/video/{config.BUCKET_MINIMAP}/{vid_name}"

@@ -48,14 +48,15 @@ async def assign_teams(
     # Read video frames
     frames = read_video(str(tmp_video_path))
 
-    team_assignments = team_assigner.get_player_teams_over_frames(
+    team_assignments, team_colors = team_assigner.get_player_teams_over_frames(
         vid_frames=frames,
         player_tracks=player_tracks,
     )
 
     # Serialize
     payload = {
-        "team_assignments": serialize_team_assignments(team_assignments)
+        "team_assignments": serialize_team_assignments(team_assignments),
+        "team_colors": team_colors
     }
 
     safe = jsonable_encoder(payload)

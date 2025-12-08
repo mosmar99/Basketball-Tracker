@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-def possession_plot(ball_tp):
+def possession_plot(ball_tp, t1_color="#9cb2a0", t2_color="#9eaec6"):
     x, y = possession_to_percentages(ball_tp)
     y_percent = np.array(y) * 100
 
@@ -9,10 +9,10 @@ def possession_plot(ball_tp):
     ax_right = ax_left.twinx()
 
     for i, val in enumerate(y_percent):
-        ax_left.bar(i, val, color="#9eaec6", width=1.0)
-        ax_left.bar(i, 100 - val, bottom=val, color="#9cb2a0", width=1.0)
+        ax_left.bar(i, val, color=t1_color, width=1.0)
+        ax_left.bar(i, 100 - val, bottom=val, color=t2_color, width=1.0)
 
-    ax_left.plot(x, y_percent, color="black", linewidth=2)
+    ax_left.plot(x, y_percent, color="black", linewidth=3)
 
     ax_left.set_ylim(0, 100)
     ax_left.set_yticks(np.arange(0, 101, 5))
@@ -29,11 +29,11 @@ def possession_plot(ball_tp):
 
     return fig
 
-def pi_plots(pi_stats):
+def pi_plots(pi_stats, t1_color="#9cb2a0", t2_color="#9eaec6"):
     p1, p2, i1, i2 = extract_timeseries(pi_stats)
     frames = list(range(len(pi_stats)))
-    plot_pass = passes_plot(frames, p1, p2)
-    plot_intr = interceptions_plot(frames, i1, i2)
+    plot_pass = passes_plot(frames, p1, p2, t1_color, t2_color)
+    plot_intr = interceptions_plot(frames, i1, i2, t1_color, t2_color)
     return plot_pass, plot_intr
     
 def to_percent(v1, v2):
@@ -75,29 +75,29 @@ def extract_timeseries(stats):
 
     return passes_t1, passes_t2, inter_t1, inter_t2
 
-def passes_plot(frames, passes_t1, passes_t2):
+def passes_plot(frames, passes_t1, passes_t2, t1_color="#9cb2a0", t2_color="#9eaec6"):
     pct = to_percent(passes_t1, passes_t2)
     return percent_style_plot(
-        frames, pct, label="Passes"
+        frames, pct, label="Passes", t1_color=t1_color, t2_color=t2_color
     )
 
-def interceptions_plot(frames, inter_t1, inter_t2):
+def interceptions_plot(frames, inter_t1, inter_t2, t1_color="#9cb2a0", t2_color="#9eaec6"):
     pct = to_percent(inter_t1, inter_t2)
     return percent_style_plot(
-        frames, pct, label="Interceptions"
+        frames, pct, "Interceptions", t1_color=t1_color, t2_color=t2_color
     )
 
-def percent_style_plot(x, pct_team1, label):
+def percent_style_plot(x, pct_team1, label, t1_color="#9cb2a0", t2_color="#9eaec6"):
     y_percent = pct_team1 * 100
 
     fig, ax_left = plt.subplots(figsize=(14, 4))
     ax_right = ax_left.twinx()
 
     for i, val in enumerate(y_percent):
-        ax_left.bar(i, val, color="#9eaec6", width=1.0)            
-        ax_left.bar(i, 100 - val, bottom=val, color="#9cb2a0", width=1.0)
+        ax_left.bar(i, val, color=t2_color, width=1.0)            
+        ax_left.bar(i, 100 - val, bottom=val, color=t1_color, width=1.0)
 
-    ax_left.plot(x, y_percent, color="black", linewidth=2)
+    ax_left.plot(x, y_percent, color="black", linewidth=3)
 
     ax_left.set_ylim(0, 100)
     ax_left.set_yticks(np.arange(0, 101, 5))
@@ -114,7 +114,7 @@ def percent_style_plot(x, pct_team1, label):
 
     return fig
 
-def control_plot(control_stats):
+def control_plot(control_stats, t1_color="#9cb2a0", t2_color="#9eaec6"):
     y_percent = []
     for frame in control_stats:
         a = float(frame.get("1", 0))
@@ -133,10 +133,10 @@ def control_plot(control_stats):
     ax_right = ax_left.twinx()
 
     for i, val in enumerate(y_percent):
-        ax_left.bar(i, val, color="#9cb2a0", width=1.0)
-        ax_left.bar(i, 100 - val, color="#9eaec6", bottom=val, width=1.0)
+        ax_left.bar(i, val, color=t1_color, width=1.0)
+        ax_left.bar(i, 100 - val, color=t2_color, bottom=val, width=1.0)
 
-    ax_left.plot(x, y_percent, color="black", linewidth=2)
+    ax_left.plot(x, y_percent, color="black", linewidth=3)
 
     ax_left.set_ylim(0, 100)
     ax_left.set_yticks(np.arange(0, 101, 10))

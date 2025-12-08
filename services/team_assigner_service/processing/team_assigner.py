@@ -41,6 +41,24 @@ class TeamAssigner:
 
         return np.array(features)
 
+    def get_rgb_from_histogram(self, hist_vector, bins=(8, 4, 4)):
+        hist_3d = hist_vector.reshape(bins)
+
+        h_idx, s_idx, v_idx = np.unravel_index(np.argmax(hist_3d), bins)
+
+        h_step = 180.0 / bins[0]
+        s_step = 256.0 / bins[1]
+        v_step = 256.0 / bins[2]
+
+        h_val = int(h_idx * h_step + h_step / 2)
+        s_val = int(s_idx * s_step + s_step / 2)
+        v_val = int(v_idx * v_step + v_step / 2)
+
+        hsv_pixel = np.array([[[h_val, s_val, v_val]]], dtype=np.uint8)
+        rgb_pixel = cv2.cvtColor(hsv_pixel, cv2.COLOR_HSV2RGB)[0][0]
+
+        return tuple(map(int, rgb_pixel))
+    
     def get_player_teams_global(self, vid_frames, player_tracks):
         player_features_map = defaultdict(list)
         frame_assignments = [dict() for _ in range(len(vid_frames))]
@@ -73,7 +91,7 @@ class TeamAssigner:
 
         for pid in unique_pids:
             # Average features per player id for global embedding (Remove noise)
-            if len(player_features_map[pid]) > 3: # Id should exist for alteast 5 frames to be used in kmeans
+            if len(player_features_map[pid]) > 3: # Id should exist for atleast this number of frames to be used in kmeans
                 feats = np.array(player_features_map[pid])
                 avg_feat = np.mean(feats, axis=0)
                 averaged_features.append(avg_feat)
@@ -89,8 +107,13 @@ class TeamAssigner:
         
         if len(unique_pids) >= 2:
             labels = kmeans.fit_predict(averaged_features)
+
+            team1_color = self.get_rgb_from_histogram(kmeans.cluster_centers_[0], bins=(8, 4, 4))
+            team2_color = self.get_rgb_from_histogram(kmeans.cluster_centers_[1], bins=(8, 4, 4))
+            team_colors = {1: team1_color, 2: team2_color}
         else:
             labels = [1] * len(unique_pids) # Fallback in case of not enough players
+            team_colors = {1: (255, 255, 255), 2: (0, 0, 0)}
 
         pid_to_team = {pid: int(label) + 1 for pid, label in zip(unique_pids, labels)}
 
@@ -100,7 +123,7 @@ class TeamAssigner:
                     team_id = pid_to_team[pid]
                     frame_assignments[frame_id][pid] = team_id
 
-        return frame_assignments
+        return frame_assignments, team_colors
 
     def get_player_teams_over_frames(self, vid_frames, player_tracks):
         return self.get_player_teams_global(vid_frames, player_tracks)
