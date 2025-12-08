@@ -76,6 +76,7 @@ class TDOverlay:
     def draw_players(self, minimap, positions, teams):
         for (mx, my), t in zip(positions, teams):
             cv2.circle(minimap, (mx, my), 10, self.color[t], -1)
+            cv2.circle(minimap, (mx, my), 10, (0, 0, 0), 2, lineType=cv2.LINE_AA)
         return minimap
     
     def draw_overlay(self, frames, td_track, x=0, y=0):

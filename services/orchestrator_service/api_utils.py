@@ -29,7 +29,7 @@ def get_team_assignments_from_service(local_video_path: str, player_tracks):
         r = requests.post(url, files=files)
     r.raise_for_status()
     data = r.json()
-    return data["team_assignments"]
+    return data
 
 def get_tracks_from_service(local_video_path: str):
     url = DETECTOR_URL

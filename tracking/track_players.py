@@ -18,7 +18,7 @@ class PlayerTracker():
     
     def get_object_tracks(self, vid_frames):
 
-        detections = self.detect_frames(vid_frames)
+        detections = self.detect_frames(vid_frames, min_conf=0.3)
 
         tracks = []
         for frame_id, detection in enumerate(detections):
