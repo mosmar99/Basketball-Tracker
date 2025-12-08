@@ -9,10 +9,15 @@ import ui_service.config as config
 from ui_service.plots import possession_plot, control_plot, pi_plots
 from ui_service.utils import fetch_local_resource, list_courts
 
-def to_desat_hex(bgr, factor=0.5):
+def to_desat_hex(bgr, sat_factor=0.5, bright_factor=1.8):
     pixel = np.array([[bgr]], dtype=np.uint8)
     hsv = cv2.cvtColor(pixel, cv2.COLOR_BGR2HSV)
-    hsv[0, 0, 1] = np.clip(hsv[0, 0, 1] * factor, 0, 255).astype(np.uint8)
+
+    hsv[0, 0, 1] = np.clip(hsv[0, 0, 1] * sat_factor, 0, 255).astype(np.uint8)
+
+    val_new = hsv[0, 0, 2] * bright_factor
+    hsv[0, 0, 2] = np.clip(val_new, 0, 255).astype(np.uint8)
+
     rgb = cv2.cvtColor(hsv, cv2.COLOR_HSV2RGB)
     r, g, b = rgb[0, 0]
     return '#{:02x}{:02x}{:02x}'.format(r, g, b)
