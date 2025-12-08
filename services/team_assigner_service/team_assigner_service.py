@@ -7,7 +7,7 @@ from pathlib import Path
 import json
 
 from utils import read_video
-from team_assigner import TeamAssigner
+from team_assigner_service.processing.team_assigner import TeamAssigner
 
 from prometheus_fastapi_instrumentator import Instrumentator
 
@@ -26,10 +26,7 @@ def serialize_team_assignments(assignments):
 app = FastAPI()
 Instrumentator().instrument(app).expose(app)
 
-team_assigner = TeamAssigner(
-        team_A="WHITE shirt",
-        team_B="DARK BLUE shirt"
-    )
+team_assigner = TeamAssigner(crop_factor=0.2)
 
 @app.post("/assign_teams")
 async def assign_teams(
@@ -54,14 +51,15 @@ async def assign_teams(
     # Read video frames
     frames = read_video(str(tmp_video_path))
 
-    team_assignments = team_assigner.get_player_teams_over_frames(
+    team_assignments, team_colors = team_assigner.get_player_teams_over_frames(
         vid_frames=frames,
         player_tracks=player_tracks,
     )
 
     # Serialize
     payload = {
-        "team_assignments": serialize_team_assignments(team_assignments)
+        "team_assignments": serialize_team_assignments(team_assignments),
+        "team_colors": team_colors
     }
 
     safe = jsonable_encoder(payload)

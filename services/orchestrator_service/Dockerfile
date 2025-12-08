@@ -19,7 +19,6 @@ COPY utils /app/utils
 COPY canvas /app/canvas
 COPY shared /app/shared
 COPY ball_acq /app/ball_acq
-COPY team_assigner /app/team_assigner
 
 # Install requirements
 COPY services/orchestrator_service/requirements.txt /app/requirements.txt

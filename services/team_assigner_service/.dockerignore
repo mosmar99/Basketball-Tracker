@@ -1,8 +1,0 @@
-*
-!*.py
-!requirements.txt
-!../../tracking
-!../../utils
-!../../shared
-!../../canvas
-!../../ball_acq
