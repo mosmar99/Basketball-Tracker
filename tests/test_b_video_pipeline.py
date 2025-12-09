@@ -25,17 +25,17 @@ def t_upload_video(video_name = "tests/s.mp4"):
 
 def t_process(video_name, court_name):
     try:
-        resp = requests.post(config.API_PROCESS, params={
+        resp = requests.post(config.DEFAULT_PROCESS, params={
             "video_name": video_name, 
             "reference_court": court_name
         })
     except:
-        print(f"Failed to process video via {config.API_PROCESS}, backend unreachable")
+        print(f"Failed to process video via {config.DEFAULT_PROCESS}, backend unreachable")
 
     if resp.status_code != 200:
-        print(f"Failed to process video via {config.API_PROCESS}, status: {resp.status_code}")
+        print(f"Failed to process video via {config.DEFAULT_PROCESS}, status: {resp.status_code}")
 
-    print(f"Successfully, processed video via: {config.API_PROCESS}")
+    print(f"Successfully, processed video via: {config.DEFAULT_PROCESS}")
     return resp.json()
 
 

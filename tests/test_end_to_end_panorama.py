@@ -14,7 +14,7 @@ def t_stitch(video_path):
         upload_video(video_path, basename, config.BUCKET_RAW)
         
         with open(video_path, "rb") as f:
-            resp = requests.post(config.API_STITCH, files={"video": (basename, f, "video/mp4")})
+            resp = requests.post(config.DEFAULT_STITCH, files={"video": (basename, f, "video/mp4")})
         
         if resp.status_code != 200:
             assert(False)
@@ -45,7 +45,7 @@ def t_wrap(panorama_uri, court_name):
             "points_json_str": json.dumps(points.tolist()),
             "court_name": court_name.strip()
         }
-        resp = requests.post(config.API_WARP, data=payload)
+        resp = requests.post(config.DEFAULT_WARP, data=payload)
         
         assert(resp.status_code == 200)
     except Exception as e:
