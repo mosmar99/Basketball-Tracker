@@ -45,8 +45,8 @@ def test_main():
     video_name = VIDEO_NAME
     court = COURT
     t_upload_court()
-    # t_upload_video(local+video_name+filetype)
-    # r = t_process(video_name, court)
+    t_upload_video(local+video_name+filetype)
+    r = t_process(video_name, court)
 
 if __name__ == "__main__":
     test_main()
