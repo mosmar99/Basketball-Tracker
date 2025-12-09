@@ -77,36 +77,31 @@ Initial experiment tracking was implemented using neptune. This is currently in 
 The application consists of a Docker Compose stack comprising 11 services. 
 Six of these: detector_service, team_assigner_service, court-service, ui_service, video_viewer_service, and orchestrator_service, are custom-built components developed by us, each with its own Dockerfile and image created during the build process. Remaining services include, minio (file storage), mongodb (structured data), mongo-express (MongoDB dashboard), grafana (monitoring dashboard), prometheus (monitoring). The Compose stack orchestrates all 11 containers into a fully integrated application environment.
 
-Running the application stack requires [docker](https://www.docker.com/) with cuda 13.0 support. The application stack can be built and launched using `docker-compose up --build`.  
+Running the application stack requires [docker](https://www.docker.com/) with cuda (13.0) support. The application stack can be built and launched using `docker-compose up --build` from the root directory.  
 The ui is divided into two workflows, one for creating reference courts for player positions. And the other for running inference on a video 
-### Court Creation Flow
+### Court Creation User Flow
+The court creation is performed as follows, first the user uploads a clip covering the baskeball court in a single sweep. From here a panorama of the court can be stitched using the button "Stitch Panorama". When the stitched panorama is complete, it is displayed in the right window for annotation. The user can now click the four corners of the court, name the court, and save the court for later use in analysis. If there is an input error during corner selection the user can click "Reset Points" to restore the selected points to the starting state. Detailed description of working principles and considerations for court stitching and inference is found in issue [#11](/../../issues/11). Bellow is an example use case:
 
+https://github.com/user-attachments/assets/66a7d850-e0b4-4b11-8188-5cd7a95c44bb
 
-### Basketball Analysis Flow
+### Basketball Analysis User Flow
+To run inference on a video a court for the video must first be selected. The user can then upload a video for analysis, select the court in the dropdown. And finally run the analysis using the "Run Analysis" button. If the court does not appear in the dropdown it can be manually refreshed using the "Refresh Courts" Button. Bellow is an example use case:
+
+https://github.com/user-attachments/assets/ad7bc2e4-9e86-4b0b-b05c-9120d3704e8f
 
 <img width="540" height="514" alt="bt_architecture" src="https://github.com/user-attachments/assets/4a7830ca-74ed-4626-8d1e-021597e4a74c" />
 
-For the MVP, the client needs first install Docker and then to run "docker-compose up --build" in the WORKDIR to run all the images in containers. The client specifies local folder with videos. Then after running `python process_ui.py` in WORKDIR, is prompted with the UI (see image below).
-
-<img width="410" height="432" alt="image" src="https://github.com/user-attachments/assets/c1ca2421-2396-4918-b3ef-1845d8224544" />
-
-They simply specify the video to be processed, which triggers the process pipeline and is signaled by "Processing.."  keywords. When processing it completed the UI shows "Done.". Both the raw and processed videos are individually uploaded to a S3 minIO container, in individual buckets. There are unit tests in the `tests` folder to ensure that bucket video upload, video deletion and bucket deletion functions correctly.
-
-<img width="928" height="316" alt="image" src="https://github.com/user-attachments/assets/c1e87f7d-376c-4001-b082-b93d1121f5d0" />
-
 The orchestrator manages the whole processing pipeline, sending and recieving API (through FastAPI) calls from services. 
 
-**A more comprehensive breakdown**: 
+**A comprehensive breakdown of orchestrator operation**: 
 1. The finetuned production model for player and ball detections is found on the cloud, specifically in a model registry within weights and biases. It is amongst other reasons a cheaper option than self hosting, check [#13](/../../issues/13) for a more detailed breakdown. 
 2. Subsequently the orchestrator sends the video path to the tracks detector service which returns player and ball tracks. These contain player and ball bounding boxes localizations for each player and ball object (identified by ByteTracker) across all frames.  
-3. Additionally, the orchestrator sends the player tracks and the video path (note that the reference to the video is passed around to minize communication overhead) to the team assigner service. The FashionCLIP by Patrick John et al. is prompted by team jersey colors for each team and takes in a clipped version of the player bounding box and returns team group, 1 or 2. Subsequently, we implemented majority voting (for further details [#12](/../../issues/12)) over a set of frames (specifically, over 50 frames) to set the final team belonging for each object id over all frames. The result is returned to the orchestrator. Considerations were made with SAM2 without noticable improvements (see [#19](/../../pull/19)).
+3. Additionally, the orchestrator sends the player tracks and the video to the team assigner service. The FashionCLIP by Patrick John et al. is prompted by team jersey colors for each team and takes in a clipped version of the player bounding box and returns team group, 1 or 2. Subsequently, we implemented majority voting (for further details [#12](/../../issues/12)) over a set of frames (specifically, over 50 frames) to set the final team belonging for each object id over all frames. The result is returned to the orchestrator. Considerations were made with SAM2 without noticable improvements (see [#19](/../../pull/19)).
 4. Ball acquisition run on the orchestrator service since its rule based and lightweight (i.e., does not justify a seperate service instance). It primarly utilizes to rules to check for ball position, the first being IoU and the second is based on closest distance between ball and players.
-5. Thereafter, the homography matrices are calculated in the court service, which are utilized to yield accurate frame by frame updates on a minimap. The service provides homographies to reproject player coordinates for a top down view. The operation is currently ony possible on video_1.mp4 due to hardcoded reference. API is detailed in the court_service README which provides API endpoints for creating reference images. They need to be implemented into the UI to enable the option of creating reference images from any video. Detailed description of operations and previous work is found in issue [#11](/../../issues/11).
-7. Lastly, within the orchestrator service, all yielded components are as an overlay drawn and depicted on the original inputted video.
-
-The requirements file specify pytorch and NVIDIA GPU execution of models. The final product is visualized in a video below. 
-
-https://github.com/user-attachments/assets/9a22c280-0b12-4f03-942b-536bd8b8f958
+5. Thereafter, the homography matrices are calculated in the court service, which are utilized to yield accurate frame by frame updates on a minimap. The service provides homographies to reproject player coordinates for a top down view. Operation of the the court_service is found in the README which details API endpoints for creating reference images. Detailed description of working principles and previous work is found in issue [#11](/../../issues/11).
+7. Within the orchestrator service, all yielded components are drawn a overlays and depicted on the original inputted video and a minimap video is created.
+8. The created videos are uploaded to S3 for serving and statistics are written to MongoDB for storage. Statistics are also returned as JSON.
+9. Finally, the ui service draws the plots and presents the videos in graphio.
 
 ## Authors (Equal Contribution)
 1. Mahmut Osmanovic
