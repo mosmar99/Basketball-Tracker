@@ -88,13 +88,34 @@ The tools used for monitoring are Prometheus and Grafana. Prometheus scrapes (ev
 ![Prometheus](image-1.png)
 
 ## Tests
+There are five tests designed to test the functionality of the application. The `tests` subfolder contains a *main.py* which will install if not previously installed the python module pytest and subsequently run the tests contained within the folder. 
+
+To run all tests:
+```py
+    # From project dir
+    python tests/main.py
+```
+
+To run a specific test:
+```py
+    # From project dir
+    python -m tests.TESTNAME
+    # where test name is the name of the specific file.
+```
+
+- `test_a_connectivity.py`: checks the statuses of the services by the new ping endpoint.
+- `test_b_video_pipeline.py`: takes the small video, and uploads it to the miniobucket, then does the entire processing including minimap, team_assignment, tracks, drawing etc.
+- `test_end_to_end_panorama.py`: takes the same video again and firstly stitches and then wraps it.
+- `test_mongodb.py`: similarly to the test_a_connectivity.py test it checks whether we are able to connect, this time to mongodb
+- `test_z_cleanup.py`: tests delete operations in all the buckets, except one specific for figures in minio. Deleting everything created in the previous tests, acting as a cleanup in the process.
 
 ## General Operation
 The application consists of a Docker Compose stack comprising 11 services. 
 Six of these: detector_service, team_assigner_service, court-service, ui_service, video_viewer_service, and orchestrator_service, are custom-built components developed by us, each with its own Dockerfile and image created during the build process. Remaining services include, minio (file storage), mongodb (structured data), mongo-express (MongoDB dashboard), grafana (monitoring dashboard), prometheus (monitoring). The Compose stack orchestrates all 11 containers into a fully integrated application environment.
 
-Running the application stack requires [docker](https://www.docker.com/) with cuda (13.0) support. The application stack can be built and launched using `docker-compose up --build` from the root directory.  
-The ui is divided into two workflows, one for creating reference courts for player positions. And the other for running inference on a basketball video.
+Running the application stack requires [docker](https://www.docker.com/) with cuda (13.0) support. The application stack can be built and launched using `./run.sh` from the root directory.  
+The UI is divided into two workflows, one for creating reference courts for player positions. And the other for running inference on a basketball video.
+
 ### Court Creation User Flow
 The court creation is performed as follows, first the user uploads a clip covering the baskeball court in a single sweep. From here a panorama of the court can be stitched using the button "Stitch Panorama". When the stitched panorama is complete, it is displayed in the right window for annotation. The user can now click the four corners of the court, name the court, and save the court for later use in analysis. If there is an input error during corner selection the user can click "Reset Points" to restore the selected points to the starting state. Detailed description of working principles and considerations for court stitching and inference is found in issue [#11](/../../issues/11). Bellow is an example use case:
 
