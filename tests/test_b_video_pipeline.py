@@ -7,6 +7,12 @@ import requests
 VIDEO_NAME = "s"
 COURT = "video_1.jpg"
 
+def t_upload_court(court_name = COURT):
+    local_path = Path(__file__).parent / court_name
+    basename = os.path.basename(local_path)
+    upload_video(local_path, basename, config.BUCKET_COURTS)
+
+
 def t_upload_video(video_name = "tests/s.mp4"):
 
     local_path = Path(__file__).parent / video_name
@@ -38,8 +44,9 @@ def test_main():
     filetype = ".mp4"
     video_name = VIDEO_NAME
     court = COURT
-    t_upload_video(local+video_name+filetype)
-    r = t_process(video_name, court)
+    t_upload_court()
+    # t_upload_video(local+video_name+filetype)
+    # r = t_process(video_name, court)
 
 if __name__ == "__main__":
     test_main()
