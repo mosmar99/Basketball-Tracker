@@ -19,9 +19,11 @@ services:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin
     volumes:
-      - ./monitoring/grafana:/etc/grafana/provisioning/datasources
+      - ./monitoring/datasource.yml:/etc/grafana/provisioning/datasources/datasource.yml
     networks:
       - shared
+    depends_on:
+      - prometheus
 
 networks:
   shared:

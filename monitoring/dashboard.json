@@ -57,7 +57,7 @@
         "datasource": { "type": "prometheus", "uid": "prometheus" },
         "targets": [
           {
-            "expr": "(increase(http_request_duration_seconds_sum{method=\"POST\", handler!~\"/metrics|/docs.*|/redoc.*|/openapi.json|/health|/live|/ready\"}[30s]) / increase(http_request_duration_seconds_count{method=\"POST\", handler!~\"/metrics|/docs.*|/redoc.*|/openapi.json|/health|/live|/ready\"}[30s])) * 1000",
+            "expr": "(\n  increase(http_request_duration_seconds_sum{\n    method=\"POST\",\n    handler=~\"/track|/assign_teams|/process|/homographyvideo\"\n  }[30s])\n  /\n  increase(http_request_duration_seconds_count{\n    method=\"POST\",\n    handler=~\"/track|/assign_teams|/process|/homographyvideo\"\n  }[30s])\n) * 1000",
             "legendFormat": "{{job}}",
             "refId": "A"
           }
@@ -87,7 +87,7 @@
         "datasource": { "type": "prometheus", "uid": "prometheus" },
         "targets": [
           {
-            "expr": "(rate(http_request_duration_seconds_sum{method=\"POST\", handler!~\"/metrics|/docs.*|/redoc.*|/openapi.json|/health|/live|/ready\"}[2m]) / rate(http_request_duration_seconds_count{method=\"POST\", handler!~\"/metrics|/docs.*|/redoc.*|/openapi.json|/health|/live|/ready\"}[2m])) * 1000",
+            "expr": "(\n  rate(http_request_duration_seconds_sum{\n    method=\"POST\",\n    handler=~\"/track|/assign_teams|/process|/homographyvideo\"\n  }[2m])\n  /\n  rate(http_request_duration_seconds_count{\n    method=\"POST\",\n    handler=~\"/track|/assign_teams|/process|/homographyvideo\"\n  }[2m])\n) * 1000",
             "legendFormat": "{{job}}",
             "refId": "A"
           }
