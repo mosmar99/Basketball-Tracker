@@ -18,3 +18,20 @@ docker compose \
   up -d --build
 
 echo "All services started!"
+echo "Waiting for Grafana to be ready..."
+
+# Wait for Grafana API to become responsive
+until curl -s http://localhost:3000/api/health >/dev/null; do
+    echo "Grafana not ready yet, retrying..."
+    sleep 2
+done
+
+echo "Grafana is up! Uploading dashboard..."
+
+curl -s -X POST http://localhost:3000/api/dashboards/db \
+  -H "Content-Type: application/json" \
+  -u admin:admin \
+  -d @monitoring/dashboard.json
+
+echo ""
+echo "Dashboard uploaded!"

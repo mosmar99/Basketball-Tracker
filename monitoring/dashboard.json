@@ -1,0 +1,108 @@
+{
+  "dashboard": {
+    "id": null,
+    "uid": "Basketball-Tracker",
+    "title": "Basketball-Tracker Dashboard",
+    "tags": ["monitoring", "api"],
+    "timezone": "browser",
+    "schemaVersion": 36,
+    "version": 4,
+    "refresh": "5s",
+
+    "panels": [
+
+      {
+        "id": 1,
+        "type": "stat",
+        "title": "Total POST Requests Per Service",
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "targets": [
+          {
+            "expr": "sum by (job) (http_requests_total{method=\"POST\", handler!~\"/metrics|/docs.*|/redoc.*|/openapi.json|/health|/live|/ready\"})",
+            "legendFormat": "{{job}}",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "orientation": "vertical",
+          "colorMode": "background",
+          "graphMode": "area",
+          "justifyMode": "center",
+          "textMode": "value_and_name",
+          "reduceOptions": {
+            "calcs": [ "lastNotNull" ]
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "decimals": 0,
+            "thresholds": {
+              "mode": "percentage",
+              "steps": [
+                { "color": "green", "value": null },
+                { "color": "blue", "value": 50 },
+                { "color": "orange", "value": 100 }
+              ]
+            }
+          }
+        },
+        "gridPos": { "h": 10, "w": 24, "x": 0, "y": 0 }
+      },
+
+      {
+        "id": 2,
+        "type": "stat",
+        "title": "Latest POST Request Latency (ms)",
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "targets": [
+          {
+            "expr": "(increase(http_request_duration_seconds_sum{method=\"POST\", handler!~\"/metrics|/docs.*|/redoc.*|/openapi.json|/health|/live|/ready\"}[30s]) / increase(http_request_duration_seconds_count{method=\"POST\", handler!~\"/metrics|/docs.*|/redoc.*|/openapi.json|/health|/live|/ready\"}[30s])) * 1000",
+            "legendFormat": "{{job}}",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "orientation": "horizontal",
+          "colorMode": "none",
+          "textMode": "value_and_name",
+          "justifyMode": "auto",
+          "reduceOptions": {
+            "calcs": ["lastNotNull"]
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ms",
+            "decimals": 2
+          }
+        },
+        "gridPos": { "h": 8, "w": 24, "x": 0, "y": 10 }
+      },
+
+      {
+        "id": 3,
+        "type": "timeseries",
+        "title": "Average POST Request Latency (ms)",
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "targets": [
+          {
+            "expr": "(rate(http_request_duration_seconds_sum{method=\"POST\", handler!~\"/metrics|/docs.*|/redoc.*|/openapi.json|/health|/live|/ready\"}[2m]) / rate(http_request_duration_seconds_count{method=\"POST\", handler!~\"/metrics|/docs.*|/redoc.*|/openapi.json|/health|/live|/ready\"}[2m])) * 1000",
+            "legendFormat": "{{job}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": { "unit": "ms", "decimals": 2 }
+        },
+        "options": {
+          "legend": { "displayMode": "table", "placement": "bottom" },
+          "tooltip": { "mode": "single" }
+        },
+        "gridPos": { "h": 10, "w": 24, "x": 0, "y": 18 }
+      }
+
+    ]
+  },
+  "overwrite": true
+}
