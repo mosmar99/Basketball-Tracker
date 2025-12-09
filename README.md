@@ -59,18 +59,22 @@ The Object Detection task consists of two primary objectives, image recognition 
 
 The precice original implementation of YOLO is detailed in the [ORIGINAL PAPER](https://arxiv.org/pdf/1506.02640). The image is first resized into a shape of 448x448, then it goes through subsequent convolutional layers. The activation function used throughout the network is the ReLU (recitified linear unit), except in the final layer, which uses a linear activation function. In addition, regularization techniques are employed, e.g., dropout and batch normalization to prevent model overfitting.
 
-## Experiment and Dataset (NEW DATASET!?)
-The finalized product is expected to be able to derive insights from various kinds of input videos. Although, we put some constraints on it. NBA Broadcast style video is the expected input video format. The input video format is expected to be *.mp4*.
+## Experiment and Dataset
+The finalized product is expected to be able to derive insights from various kinds of basketball input videos. Although, we put some constraints on it. NBA Broadcast style video is the expected input video format. The input video format is expected to be *.mp4*.
 
-For object detection of ball, player and referee the following dataset is used, [basketball players](https://universe.roboflow.com/workspace-5ujvu/basketball-players-fy4c2-vfsuv). The dataset contains 320 annotated images with classes: Ball, Player, Referee, Clock, Hoop, Overlay and Scoreboard. The dataset can be used to fine tune a object detection model to ignore the spectators.
+For object detection basketball players, the following dataset is used, [basketball players](https://universe.roboflow.com/workspace-5ujvu/basketball-players-fy4c2-vfsuv). The dataset contains 320 annotated images with classes: Ball, Player, Referee, Clock, Hoop, Overlay and Scoreboard. The dataset can be used to fine tune a object detection model to ignore the spectators. 
+
+Nonetheless, we noticed that it had subpar performance on detecting the ball. Hence, we fine-tuned a smaller YOLO model on a larger dataset with approximately 14000 images, increasing ball mAP50 from 80 to 92% ([ball dataset](https://universe.roboflow.com/asas-annotations/ai-sports-analytics-system/dataset/7)).
 
 For court homography a detailed writeup on Keypoint pose detetion for court is found in issue [#11](/../../issues/11) the previously specified dataset is not used (~~[a dataset with court keypoints](https://universe.roboflow.com/fyp-3bwmg/reloc2-den7l)~~). The issue also contains details on the current model and approach. The base of the current implementation is to build a panorama from video. This panorama image is used to create a reference image for keypoint extraction and matching with SuperPoint and LightGlue respectively.
 
-Initial experiment tracking was implemented using neptune. This is currently in the progress of being migrated to weights and biases (wandb) which also provides a model registry. Progress and considerations are detailed in issue [#13](/../../issues/13). Focus has been put on getting the application to a runnable state using docker, as such model training and improvement has been put on hold during the final stages of the sprint. Since no new models have been finetuned since migration to wandb started, no experiment logs currently exist in wandb, however artifacts from neptune do. The model is kept as an artifact and linked to the model registry with tag @production. The dataset is kept in artifact storage. This is to facilitate running of the application. To access the production model from the model registry please reach out to us.
+Current experiment tracking is implemented using Weights and Biases (access to WANDB requires an invited by us). Progress and considerations are detailed in issue [#13](/../../issues/13). The application is containerized, everything needed to run it (except cloud access) is detailed. The model is kept as an artifact and linked to the model registry with tag @production. It is always retrieved from the model repository on application start-up, ensuring that users always have the current production model. The dataset is liekwise versioned kept in artifact storage. This facilitates in tracking which model that was trained on what data. Again, to access the production model from the model registry please reach out to us.
 
 ## Model Registry and Experiment Tracking
 Fine tuning experiments are tracked using weights and biases, statistics are logged for each training run:
 <img width="1900" height="907" alt="image" src="https://github.com/user-attachments/assets/5e5543dd-69c6-43b8-8017-07c48035cb99" />
+
+![alt text](image-2.png)
 
 Models are linked to a model registry and tagged with `@production` for easy access. The service fetches the model from registry on startup. This ensures that the service always has the latest model:
 <img width="1912" height="796" alt="image" src="https://github.com/user-attachments/assets/d660f942-fa2e-4acd-8cf9-68c3a9110b0f" />
@@ -140,7 +144,7 @@ The orchestrator manages the whole processing pipeline, sending and recieving AP
 8. The created videos are uploaded to S3 for serving and statistics are written to MongoDB for storage. Statistics are also returned as JSON.
 9. Finally, the ui service draws the plots and presents the videos in graphio.
 
-## Reflections and Improvements
+## Improvements and Reflections
 During the project we have encountered multiple challenges. There are multiple aspects that could be further developed given more time.
 
 ### Id Tracking
@@ -154,6 +158,10 @@ Annotation of court panoramas to create reference images for homography is curre
 
 ### Court Stitching
 Regarding court homography, an alternative approach could be implemented utilizing a global feature mapping. Keypoints and descriptors should be generated for each image, using a single image as an initial reference. Subsequently, attempts to match all other images to this reference should be performed. Any image with a strong match to the global reference should have its features mapped into the global reference to aid subsequent matchings. This solution would be more robust to the accumulation of small errors, as images are matched to global features rather than just the previous frame. This would also allow for random sampling from the video. However, it would come at a cost to performance, as failed matches may need to be reattempted if sufficient descriptors do not yet exist in the global map.
+
+### Takeaways
+...
+
 
 ## Authors (Equal Contribution)
 1. Mahmut Osmanovic
