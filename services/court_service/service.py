@@ -6,6 +6,7 @@ import numpy as np
 import json
 from fastapi import FastAPI, UploadFile, File, Form
 import uvicorn
+from prometheus_fastapi_instrumentator import Instrumentator
 
 from .processing.court_stitcher import CourtStitcher
 from .processing.inference import HomographyInference
@@ -15,6 +16,7 @@ from .utils.video_io import load_frames
 from shared.storage import s3_upload, download_to_temp
 
 app = FastAPI(title="Homography Service")
+Instrumentator().instrument(app).expose(app)
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 stitcher = CourtStitcher(DEVICE)

@@ -1,5 +1,5 @@
-import matplotlib.pyplot as plt
 import numpy as np
+import matplotlib.pyplot as plt
 
 def possession_plot(ball_tp, t1_color="#9cb2a0", t2_color="#9eaec6"):
     x, y = possession_to_percentages(ball_tp)

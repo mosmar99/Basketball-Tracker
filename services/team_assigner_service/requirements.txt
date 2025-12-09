@@ -5,4 +5,6 @@ boto3
 opencv-python-headless
 pillow
 python-multipart
+ultralytics
+prometheus-fastapi-instrumentator
 scikit-learn

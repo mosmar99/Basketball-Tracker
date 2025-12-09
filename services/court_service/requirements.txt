@@ -5,3 +5,4 @@ boto3==1.35.60
 uvicorn==0.38.0
 python-dotenv==1.0.1
 python-multipart==0.0.20
+prometheus-fastapi-instrumentator
