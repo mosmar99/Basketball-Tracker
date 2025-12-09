@@ -48,8 +48,10 @@ async def process_video(video_name: str, reference_court: str):
 
     # 3) Get team assignments
     team_assignments_json = get_team_assignments_from_service(tmp_video_path, player_tracks)
-    team_assignments = deserialize_team_assignments(team_assignments_json)
-
+    team_assignments = deserialize_team_assignments(team_assignments_json["team_assignments"])
+    team_colors = team_assignments_json["team_colors"]
+    print("team colors:: ", team_colors)
+    print("col 1:", team_colors["1"])
     # 4) Ball possession
     ball_sensor = BallAcquisitionSensor()
     ball_acquisition_list = ball_sensor.detect_ball_possession(player_tracks, ball_tracks)
@@ -63,7 +65,7 @@ async def process_video(video_name: str, reference_court: str):
     H = get_homographies_from_service(tmp_video_path, tmp_ref_path)
 
     # 5) Draw overlays
-    player_draw = PlayerTrackDrawer()
+    player_draw = PlayerTrackDrawer(team_1_color=team_colors["1"], team_2_color=team_colors["2"])
     ball_draw   = BallTrackDrawer()
 
     player_vid_frames = player_draw.draw_annotations(
@@ -74,9 +76,9 @@ async def process_video(video_name: str, reference_court: str):
     )
     output_vid_frames = ball_draw.draw_annotations(player_vid_frames, ball_tracks)
 
-    top_down_overlay = TDOverlay(tmp_ref_path, base_court, xz=1280, yz=720)
+    top_down_overlay = TDOverlay(tmp_ref_path, base_court, t1_color=team_colors["1"], t2_color=team_colors["2"], xz=1280, yz=720)
     td_tracks = top_down_overlay.get_td_tracks(player_tracks, team_assignments, H)
-    minimap_frames = [np.zeros_like(frame) for frame in output_vid_frames]
+    minimap_frames = [np.zeros((720, 1280, 3), dtype=np.uint8) for _ in output_vid_frames]
 
     output_vid_minimap, control_stats = top_down_overlay.draw_overlay(
         minimap_frames,
@@ -114,7 +116,8 @@ async def process_video(video_name: str, reference_court: str):
         "ball_tp": f"{ball_team_possessions}",
         "vid_name": f"{video_name}",
         "control_stats": json.dumps(control_stats),
-        'pi_stats': json.dumps(passes_and_interceptions)
+        "pi_stats": json.dumps(passes_and_interceptions),
+        "team_colors": json.dumps(team_colors)
     })
 
 if __name__ == "__main__":

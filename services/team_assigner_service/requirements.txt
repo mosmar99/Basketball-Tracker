@@ -4,7 +4,7 @@ requests
 boto3
 opencv-python-headless
 pillow
-transformers
 python-multipart
 ultralytics
 prometheus-fastapi-instrumentator
+scikit-learn
