@@ -8,14 +8,18 @@ user = os.getenv("MONGODB_USER", "root")
 password = os.getenv("MONGODB_PASS", "password")
 
 MONGODB_URI = f"mongodb://{user}:{password}@localhost:{port}/"
-print("Connecting to:", MONGODB_URI)
 
-client = MongoClient(MONGODB_URI, serverSelectionTimeoutMS=5000)
+def test_mongodb():
+    print("Connecting to:", MONGODB_URI)
 
-try:
-    result = client.admin.command("ping")
-    print("Successfully connected to MongoDB!")
-    print(result)
-except Exception as e:
-    print("MongoDB connection failed!")
-    print("Error:", e)
+    client = MongoClient(MONGODB_URI, serverSelectionTimeoutMS=5000)
+
+    try:
+        result = client.admin.command("ping")
+        print("Successfully connected to MongoDB!")
+        print(result)
+        assert(True)
+    except Exception as e:
+        print("MongoDB connection failed!")
+        print("Error:", e)
+        assert(False)

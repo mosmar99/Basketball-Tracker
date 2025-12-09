@@ -120,5 +120,9 @@ async def process_video(video_name: str, reference_court: str):
         "team_colors": json.dumps(team_colors)
     })
 
+@app.get("/ping")
+def ping():
+    return {"status": "ok"}
+
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
