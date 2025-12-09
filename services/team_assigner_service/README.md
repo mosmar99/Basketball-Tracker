@@ -61,5 +61,3 @@ Returns:
 - Example usage: team_current_player = team_assignments[frame_idx].get(player_id)
 
 - team_colors: mapping of team IDs to RGB colors.
-
-- The output can be used in downstream analytics or overlay rendering pipelines.
