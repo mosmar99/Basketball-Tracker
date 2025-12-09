@@ -8,37 +8,38 @@ Currently, the NBA utilizes statistics gathered by SportVU, which is a camera sy
 Concretely, our aim is to automatically detect and track player as well as ball movement, with the intent of extracting actionable metrics from game footage. These metrics could include speed, positioning, ball possession, movement patterns and other performance indicators. The analytical results are to be without cost and immediately rendered available to its user, be it smaller organizations or hobbyists.
 
 ## General System Outline
-
-### Minimum capabilities:
-- Top-down Player court position (In MVP)
-- Top-down Ball court position
+### Included capabilities:
+- Top-down Player court position
 - Statistics
-  - Ball possession (team/individual) (In MVP)
-  - Passes/Interceptions (team/individual)
+  - Ball possession (team)
+  - Passes (team)
+  - Interceptions (team)
 - Court spatial analysis
-  - Ball position heatmap
-- Vizualize insights  (Partially in MVP (Video))
+  - Court Team Controll
+- Vizualize insights
 
 ### Nice to have:
 - Statistics
   - Goals (Individual)
   - Attempted (Individual)
 - Court spatial analysis
-  - Court Team Controll
+  - Ball position heatmap (difficult given single camera view)
 - Player highlight reel
+- Top-down Ball court position (difficult given single camera view)
 
 ### If time permits:
 - Live Analysis
 
 ### Intended tools:
-- Object Detection (Ultralytics YOLOv11/SAM2 or other suitable)
-- Experiment and Model Tracking (Neptune -> wandb)
-- Model Registry (Neptune -> wandb)
-- Id Tracking (Supervision ByteTrack or BoT-SORT)
+- Object Detection (Ultralytics YOLOv12)
+- Experiment and Model Tracking (wandb)
+- Model Registry (wandb)
+- Id Tracking (Supervision ByteTrack)
 - Homography (OpenCV SIFT, and SuperPoint + LightGlue)
 - Containerization (Docker)
-- Infrastructure Management (Terraform)
+- API module (FastAPI)
 - Database (MongoDB for structured data storage)
+- User Interface (gradio)
 
 ### Challenges:
 - Only include persons of interest (e..g, Players and Basketball), i.e., not people from the public.
@@ -51,13 +52,13 @@ Concretely, our aim is to automatically detect and track player as well as ball 
 - Packaging statistics to provide a user friendly and insightful overview.
 
 ## Pre-trained Models
-Object Detection Model (baseline): [YOLOv11 (You-Only-Look-Once)](https://github.com/ultralytics/ultralytics). Although initially published in 2015, through persistent versioning of the model, it has retained its position as a state-of-the-art model. Its core strengths are its *speed*, *detection accuracy*, *good generalization*, and that its *open-source*. Each versioning of YOLO attempts to improve on the previous, be it better handling of edge cases, quicker object detection or higher accuracy.
+Object Detection Model (baseline): [YOLOv12 (You-Only-Look-Once)](https://github.com/ultralytics/ultralytics). Although initially published in 2015, through persistent versioning of the model, it has retained its position as a state-of-the-art model. Its core strengths are its *speed*, *detection accuracy*, *good generalization*, and that its *open-source*. Each versioning of YOLO attempts to improve on the previous, be it better handling of edge cases, quicker object detection or higher accuracy.
 
 The Object Detection task consists of two primary objectives, image recognition and image localization. Image recognition asserts whether or not there is an object of a specified type (e.g., Person) in the image. Image localization places a bounding box around the type (e..g, the Person).
 
 The precice original implementation of YOLO is detailed in the [ORIGINAL PAPER](https://arxiv.org/pdf/1506.02640). The image is first resized into a shape of 448x448, then it goes through subsequent convolutional layers. The activation function used throughout the network is the ReLU (recitified linear unit), except in the final layer, which uses a linear activation function. In addition, regularization techniques are employed, e.g., dropout and batch normalization to prevent model overfitting.
 
-## Experiment and Dataset
+## Experiment and Dataset (NEW DATASET!?)
 The finalized product is expected to be able to derive insights from various kinds of input videos. Although, we put some constraints on it. NBA Broadcast style video is the expected input video format. The input video format is expected to be *.mp4*.
 
 For object detection of ball, player and referee the following dataset is used, [basketball players](https://universe.roboflow.com/workspace-5ujvu/basketball-players-fy4c2-vfsuv). The dataset contains 320 annotated images with classes: Ball, Player, Referee, Clock, Hoop, Overlay and Scoreboard. The dataset can be used to fine tune a object detection model to ignore the spectators.
@@ -66,17 +67,22 @@ For court homography a detailed writeup on Keypoint pose detetion for court is f
 
 Initial experiment tracking was implemented using neptune. This is currently in the progress of being migrated to weights and biases (wandb) which also provides a model registry. Progress and considerations are detailed in issue [#13](/../../issues/13). Focus has been put on getting the application to a runnable state using docker, as such model training and improvement has been put on hold during the final stages of the sprint. Since no new models have been finetuned since migration to wandb started, no experiment logs currently exist in wandb, however artifacts from neptune do. The model is kept as an artifact and linked to the model registry with tag @production. The dataset is kept in artifact storage. This is to facilitate running of the application. To access the production model from the model registry please reach out to us.
 
-For reference, experiment tracking in neptune is shown bellow.
-<img width="1908" height="551" alt="image (4)" src="https://github.com/user-attachments/assets/b2e14f9e-da37-489a-a05b-25f6c34289ea" />
+## Model Registry and Experiment Tracking
 
-For reference, model registry and current progress in wandb is shown bellow.
-<img width="1140" height="535" alt="image (1)" src="https://github.com/user-attachments/assets/763472b2-2e37-4c95-877b-b0752f68efaa" />
-<img width="1259" height="530" alt="image (2)" src="https://github.com/user-attachments/assets/1e3ddfe5-01a2-459e-95f7-59a5d009820d" />
-<img width="1919" height="688" alt="image (3)" src="https://github.com/user-attachments/assets/2ad7f24b-71fc-4383-8504-0be2195bdc51" />
+## Serving and Monitoring
 
-## State as of sprint 2 (MVP)
-This release provides a dockerized application delivered as a Docker Compose stack consisting of five services. 
-Four of these: _detector_service, team_assigner_service, court-service, and orchestrator_service_, are custom-built components developed by us, each with its own Dockerfile and image created during the build process. The fifth service, minio, is an external dependency pulled from the official minio/minio image on Docker Hub and included as part of the stack to provide object storage. The Compose stack orchestrates all five containers into a fully integrated application environment.
+## Tests
+
+## General Operation
+The application consists of a Docker Compose stack comprising 11 services. 
+Six of these: detector_service, team_assigner_service, court-service, ui_service, video_viewer_service, and orchestrator_service, are custom-built components developed by us, each with its own Dockerfile and image created during the build process. Remaining services include, minio (file storage), mongodb (structured data), mongo-express (MongoDB dashboard), grafana (monitoring dashboard), prometheus (monitoring). The Compose stack orchestrates all 11 containers into a fully integrated application environment.
+
+Running the application stack requires [docker](https://www.docker.com/) with cuda 13.0 support. The application stack can be built and launched using `docker-compose up --build`.  
+The ui is divided into two workflows, one for creating reference courts for player positions. And the other for running inference on a video 
+### Court Creation Flow
+
+
+### Basketball Analysis Flow
 
 <img width="540" height="514" alt="bt_architecture" src="https://github.com/user-attachments/assets/4a7830ca-74ed-4626-8d1e-021597e4a74c" />
 
