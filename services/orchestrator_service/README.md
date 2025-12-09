@@ -36,8 +36,8 @@ curl -X POST \
   "vid_name": "game1",
   "control_stats": { "1": 52.3, "2": 47.7 },
   "pi_stats": {
-    "team_1": { "passes": 2, "interceptions": 6 },
-    "team_2": { "passes": 4, "interceptions": 4 }
+    "1": { "passes": 2, "interceptions": 6 },
+    "2": { "passes": 4, "interceptions": 4 }
   },
   "team_colors": {
     "1": [220, 20, 60],
