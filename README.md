@@ -18,17 +18,6 @@ Concretely, our aim is to automatically detect and track player as well as ball 
   - Court Team Controll
 - Vizualize insights
 
-### Nice to have:
-- Statistics
-  - Goals (Individual)
-  - Attempted (Individual)
-- Court spatial analysis
-  - Ball position heatmap (difficult given single camera view)
-- Player highlight reel
-- Top-down Ball court position (difficult given single camera view)
-
-### If time permits:
-- Live Analysis
 
 ### Used tools:
 - Object Detection (Ultralytics YOLOv12)
@@ -51,6 +40,17 @@ Concretely, our aim is to automatically detect and track player as well as ball 
 - Attempted/Successful shots on hoop, detect and keep track of attempted shots on hoop and or scores by team (or individuals).
 - Court homography, to go from broadcast view to top down view a projection is needed. Court is obstructed by players which can be difficult for SIFT or keypoint detection.
 - Packaging statistics to provide a user friendly and insightful overview.
+
+### Future possibilities:
+- Statistics
+  - Goals (Individual)
+  - Attempted (Individual)
+- Court spatial analysis
+  - Ball position heatmap (difficult given single camera view)
+- Player highlight reel
+- Top-down Ball court position (difficult given single camera view)
+- Live Analysis
+  
 
 ## Pre-trained Models
 Object Detection Model (baseline): [YOLOv12 (You-Only-Look-Once)](https://github.com/ultralytics/ultralytics). Although initially published in 2015, through persistent versioning of the model, it has retained its position as a state-of-the-art model. Its core strengths are its *speed*, *detection accuracy*, *good generalization*, and that its *open-source*. Each versioning of YOLO attempts to improve on the previous, be it better handling of edge cases, quicker object detection or higher accuracy.
@@ -76,6 +76,16 @@ Models are linked to a model registry and tagged with `@production` for easy acc
 <img width="1912" height="796" alt="image" src="https://github.com/user-attachments/assets/d660f942-fa2e-4acd-8cf9-68c3a9110b0f" />
 
 ## Monitoring
+The monitoring of the four core services: *court*, *detector*, *team assigner* and the *orchestrator*. The monitored metrics are:
+  1. API Call **Count** to each of the Services
+  2. **Lastest Latency** for each of the API calls
+  3. **Average Latency** for each of the API calls
+
+The tools used for monitoring are Prometheus and Grafana. Prometheus scrapes (every 5 seconds) specified POST-API-endpoints within the services for data. The collected data, in this case, api call count and latency of requests, are accessed by Grafana from the Prometheus datasource. Grafana subsequently displays the accessed data in dashboards. Both the datasource and dashboard UI are setup during application start up. Corresponding code files may be accessed under the `monitoring` folder. Read [#43](https://github.com/mosmar99/Basketball-Tracker/pull/43#issue-3708105679).
+
+![Grafana](image.png)
+
+![Prometheus](image-1.png)
 
 ## Tests
 
