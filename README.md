@@ -30,7 +30,7 @@ Concretely, our aim is to automatically detect and track player as well as ball 
 ### If time permits:
 - Live Analysis
 
-### Intended tools:
+### Used tools:
 - Object Detection (Ultralytics YOLOv12)
 - Experiment and Model Tracking (wandb)
 - Model Registry (wandb)
@@ -38,6 +38,7 @@ Concretely, our aim is to automatically detect and track player as well as ball 
 - Homography (OpenCV SIFT, and SuperPoint + LightGlue)
 - Containerization (Docker)
 - API module (FastAPI)
+- Monitoring (Prometheus, and grafana)
 - Database (MongoDB for structured data storage)
 - User Interface (gradio)
 
@@ -68,8 +69,13 @@ For court homography a detailed writeup on Keypoint pose detetion for court is f
 Initial experiment tracking was implemented using neptune. This is currently in the progress of being migrated to weights and biases (wandb) which also provides a model registry. Progress and considerations are detailed in issue [#13](/../../issues/13). Focus has been put on getting the application to a runnable state using docker, as such model training and improvement has been put on hold during the final stages of the sprint. Since no new models have been finetuned since migration to wandb started, no experiment logs currently exist in wandb, however artifacts from neptune do. The model is kept as an artifact and linked to the model registry with tag @production. The dataset is kept in artifact storage. This is to facilitate running of the application. To access the production model from the model registry please reach out to us.
 
 ## Model Registry and Experiment Tracking
+Fine tuning experiments are tracked using weights and biases, statistics are logged for each training run:
+<img width="1900" height="907" alt="image" src="https://github.com/user-attachments/assets/5e5543dd-69c6-43b8-8017-07c48035cb99" />
 
-## Serving and Monitoring
+Models are linked to a model registry and tagged with `@production` for easy access. The service fetches the model from registry on startup. This ensures that the service always has the latest model:
+<img width="1912" height="796" alt="image" src="https://github.com/user-attachments/assets/d660f942-fa2e-4acd-8cf9-68c3a9110b0f" />
+
+## Monitoring
 
 ## Tests
 
@@ -78,7 +84,7 @@ The application consists of a Docker Compose stack comprising 11 services.
 Six of these: detector_service, team_assigner_service, court-service, ui_service, video_viewer_service, and orchestrator_service, are custom-built components developed by us, each with its own Dockerfile and image created during the build process. Remaining services include, minio (file storage), mongodb (structured data), mongo-express (MongoDB dashboard), grafana (monitoring dashboard), prometheus (monitoring). The Compose stack orchestrates all 11 containers into a fully integrated application environment.
 
 Running the application stack requires [docker](https://www.docker.com/) with cuda (13.0) support. The application stack can be built and launched using `docker-compose up --build` from the root directory.  
-The ui is divided into two workflows, one for creating reference courts for player positions. And the other for running inference on a video 
+The ui is divided into two workflows, one for creating reference courts for player positions. And the other for running inference on a basketball video.
 ### Court Creation User Flow
 The court creation is performed as follows, first the user uploads a clip covering the baskeball court in a single sweep. From here a panorama of the court can be stitched using the button "Stitch Panorama". When the stitched panorama is complete, it is displayed in the right window for annotation. The user can now click the four corners of the court, name the court, and save the court for later use in analysis. If there is an input error during corner selection the user can click "Reset Points" to restore the selected points to the starting state. Detailed description of working principles and considerations for court stitching and inference is found in issue [#11](/../../issues/11). Bellow is an example use case:
 
@@ -103,6 +109,8 @@ The orchestrator manages the whole processing pipeline, sending and recieving AP
 8. The created videos are uploaded to S3 for serving and statistics are written to MongoDB for storage. Statistics are also returned as JSON.
 9. Finally, the ui service draws the plots and presents the videos in graphio.
 
+## Reflections and Improvements
+During the project we have encountered multiple challenging modeling problems. There are multiple aspects that could be further improved given more time. Regarding court homography, an alternative approach could be implemented utilizing a global feature mapping. Keypoints and descriptors should be generated for each image, using a single image as an initial reference. Subsequently, attempts to match all other images to this reference should be performed. Any image with a strong match to the global reference should have its features mapped into the global reference to aid subsequent matchings. This solution would be more robust to the accumulation of small errors, as images are matched to global features rather than just the previous frame. This would also allow for random sampling from the video. However, it would come at a cost to performance, as failed matches may need to be reattempted if sufficient descriptors do not yet exist in the global map.
 ## Authors (Equal Contribution)
 1. Mahmut Osmanovic
 2. Isac Paulssson
