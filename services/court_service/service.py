@@ -145,5 +145,9 @@ async def stitch_panorama_ep(video: UploadFile = File(...), reference: UploadFil
         "H": H,
     }
 
+@app.get("/ping")
+def ping():
+    return {"status": "ok"}
+
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8003)

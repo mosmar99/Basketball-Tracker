@@ -119,3 +119,7 @@ def video_statistics(video_name: str):
     </html>
     """
     return HTMLResponse(html)
+
+@app.get("/ping")
+def ping():
+    return {"status": "ok"}

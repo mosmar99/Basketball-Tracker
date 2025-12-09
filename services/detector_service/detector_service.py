@@ -61,6 +61,9 @@ async def track_video(file: UploadFile = File(...)):
     safe_payload = jsonable_encoder(payload)
     return JSONResponse(content=safe_payload)
 
+@app.get("/ping")
+def ping():
+    return {"status": "ok"}
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8001)

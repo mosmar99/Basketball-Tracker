@@ -1,1 +1,1 @@
-from .storage import download_to_temp, upload_video, s3_upload, list_bucket_contents
+from .storage import download_to_temp, upload_video, s3_upload, list_bucket_contents, delete_video
