@@ -32,7 +32,7 @@ async def stitch_panorama_ep(video: UploadFile = File(...)):
     with open(tmp_video, "wb") as f:
         f.write(await video.read())
 
-    frames = load_frames(tmp_video, sample_rate=3)
+    frames = load_frames(tmp_video, sample_rate=6)
 
     panorama = stitcher.align_and_stitch(frames)
     cv2.imwrite(tmp_output_img, panorama)
