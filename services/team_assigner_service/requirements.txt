@@ -7,3 +7,4 @@ pillow
 python-multipart
 prometheus-fastapi-instrumentator
 scikit-learn
+dotenv

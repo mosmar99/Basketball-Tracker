@@ -6,7 +6,7 @@ import tempfile
 from pathlib import Path
 import json
 
-from utils import read_video
+from shared.utils import read_video
 from team_assigner_service.processing.team_assigner import TeamAssigner
 
 from prometheus_fastapi_instrumentator import Instrumentator
