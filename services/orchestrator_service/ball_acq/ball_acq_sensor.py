@@ -1,7 +1,7 @@
 import numpy as np
 import sys
 sys.path.append("../")
-from utils import get_straight_line_distance, get_center_bbox
+from shared.utils import get_straight_line_distance, get_center_bbox
 
 class BallAcquisitionSensor():
     def __init__(self):

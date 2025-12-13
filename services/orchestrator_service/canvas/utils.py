@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 import sys
 sys.path.append("../")
-from utils import get_width_bbox, get_center_bbox
+from shared.utils import get_width_bbox, get_center_bbox
 
 def draw_square(frame, bbox, color, track_id=None):
     y2 = int(bbox[3])

@@ -11,7 +11,6 @@ COPY services/team_assigner_service/requirements.txt .
 RUN pip3 install --upgrade pip && \
 pip3 install -r requirements.txt
 
-COPY utils/ ./utils/
 COPY shared/ ./shared/
 COPY services/team_assigner_service/ ./team_assigner_service/
 

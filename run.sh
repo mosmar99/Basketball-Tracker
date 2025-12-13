@@ -35,3 +35,9 @@ curl -s -X POST http://localhost:3000/api/dashboards/db \
 
 echo ""
 echo "Dashboard uploaded!"
+
+echo "Waiting 30 seconds before running tests..."
+sleep 30
+
+echo "Running tests..."
+python tests/main.py

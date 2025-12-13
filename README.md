@@ -10,7 +10,7 @@ Concretely, our aim is to automatically detect and track player as well as ball 
 The application consists of a Docker Compose stack comprising 11 services. 
 Six of these: detector_service, team_assigner_service, court-service, ui_service, video_viewer_service, and orchestrator_service, are custom-built components developed by us, each with its own Dockerfile and image created during the build process. Remaining services include, minio (file storage), mongodb (structured data), mongo-express (MongoDB dashboard), grafana (monitoring dashboard), prometheus (monitoring). The Compose stack orchestrates all 11 containers into a fully integrated application environment.
 
-Running the application stack requires [docker](https://www.docker.com/) with cuda (13.0) support. The application stack can be built and launched using `./run.sh` from the root directory.  
+Running the application stack requires [docker](https://www.docker.com/) with cuda (13.0) support. The application stack can be built and launched using `./run.sh` from the root directory (note model registry access).  
 The UI is divided into two workflows, one for creating reference courts for player positions. And the other for running inference on a basketball video.
 
 ### Court Creation User Flow
@@ -23,7 +23,7 @@ To run inference on a video a court for the video must first be selected. The us
 
 https://github.com/user-attachments/assets/ad7bc2e4-9e86-4b0b-b05c-9120d3704e8f
 
-![alt text](imgs/readme/image-3.png)
+![alt text](readme_artifacts/image-3.png)
 
 The orchestrator manages the whole processing pipeline, sending and recieving API (through FastAPI) calls from services. 
 
@@ -85,7 +85,7 @@ The orchestrator manages the whole processing pipeline, sending and recieving AP
 ## Pre-trained Models
 Object Detection Model (baseline): [YOLOv12 (You-Only-Look-Once)](https://github.com/ultralytics/ultralytics). Although initially published in 2015, through persistent versioning of the model, it has retained its position as a state-of-the-art model. Its core strengths are its *speed*, *detection accuracy*, *good generalization*, and that its *open-source*. Each versioning of YOLO attempts to improve on the previous, be it better handling of edge cases, quicker object detection or higher accuracy. The choice of YOLO primarly boils down to its high performance coupled with its fast inference times. Other contendors included Detection Transformer (DETR) and the Segment-Anything-Models (SAM). DETR was not chosen since its performance was lower than YOLO12 (both in our testing and the testing of others), in addition to having longer inference times. SAM3 performed better than YOLO12, but its inference times were substantially longer, hence, not the most suitable given our scalability concerns. Posit users which require the processing of long basketball videos, the quicker the response, the better. 
 
-![alt text](imgs/readme/image-4.png)
+![alt text](readme_artifacts/image-4.png)
 
 ## About YOLO
 The Object Detection task, more generally, consists of two primary objectives, image recognition and image localization. Image recognition asserts whether or not there is an object of a specified type (e.g., Person) in the image. Image localization places a bounding box around the type (e..g, the Person).
@@ -107,7 +107,7 @@ Current experiment tracking is implemented using Weights and Biases (access to W
 Fine tuning experiments are tracked using weights and biases, statistics are logged for each training run:
 <img width="1900" height="907" alt="image" src="https://github.com/user-attachments/assets/5e5543dd-69c6-43b8-8017-07c48035cb99" />
 
-![alt text](imgs/readme/image-2.png)
+![alt text](readme_artifacts/image-2.png)
 
 Models are linked to a model registry and tagged with `@production` for easy access. The service fetches the model from registry on startup. This ensures that the service always has the latest model:
 <img width="1912" height="796" alt="image" src="https://github.com/user-attachments/assets/d660f942-fa2e-4acd-8cf9-68c3a9110b0f" />
@@ -120,9 +120,9 @@ The monitoring of the four core services: *court*, *detector*, *team assigner* a
 
 The tools used for monitoring are Prometheus and Grafana. Prometheus scrapes (every 5 seconds) specified POST-API-endpoints within the services for data. The collected data, in this case, api call count and latency of requests, are accessed by Grafana from the Prometheus datasource. Grafana subsequently displays the accessed data in dashboards. Both the datasource and dashboard UI are setup during application start up. Corresponding code files may be accessed under the `monitoring` folder. Read [#43](https://github.com/mosmar99/Basketball-Tracker/pull/43#issue-3708105679).
 
-![Grafana](imgs/readme/image.png)
+![Grafana](readme_artifacts/image.png)
 
-![Prometheus](imgs/readme/image-1.png)
+![Prometheus](readme_artifacts/image-1.png)
 
 ## Tests
 There are five tests designed to test the functionality of the application. The `tests` subfolder contains a *main.py* which will install if not previously installed the python module pytest and subsequently run the tests contained within the folder. 

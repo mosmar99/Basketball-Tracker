@@ -6,8 +6,8 @@ import tempfile
 from pathlib import Path
 
 from prometheus_fastapi_instrumentator import Instrumentator
-from tracking import PlayerTracker, BallTracker, get_player_production_model_path, get_ball_production_model_path
-from utils import read_video
+from detector_service.tracking import PlayerTracker, BallTracker, get_player_production_model_path, get_ball_production_model_path
+from shared.utils import read_video
 
 def serialize_tracks(tracks):
     out = []

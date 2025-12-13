@@ -21,9 +21,9 @@ from orchestrator_service.mongo_writer import (
 )
 
 from shared import download_to_temp, upload_video
-from utils import read_video, save_video
-from canvas import PlayerTrackDrawer, BallTrackDrawer, TDOverlay
-from ball_acq import BallAcquisitionSensor
+from shared.utils import read_video, save_video
+from orchestrator_service.canvas import PlayerTrackDrawer, BallTrackDrawer, TDOverlay
+from orchestrator_service.ball_acq import BallAcquisitionSensor
 
 app = FastAPI()
 Instrumentator().instrument(app).expose(app)
