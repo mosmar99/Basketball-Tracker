@@ -10,7 +10,7 @@ Concretely, our aim is to automatically detect and track player as well as ball 
 The application consists of a Docker Compose stack comprising 11 services. 
 Six of these: detector_service, team_assigner_service, court-service, ui_service, video_viewer_service, and orchestrator_service, are custom-built components developed by us, each with its own Dockerfile and image created during the build process. Remaining services include, minio (file storage), mongodb (structured data), mongo-express (MongoDB dashboard), grafana (monitoring dashboard), prometheus (monitoring). The Compose stack orchestrates all 11 containers into a fully integrated application environment.
 
-Running the application stack requires [docker](https://www.docker.com/) with cuda (13.0) support. The application stack can be built and launched using `./run.sh` from the root directory (note model registry access).  
+Running the application stack requires [docker](https://www.docker.com/) with cuda (13.0) support. A `.env` needs to be created following the `example.env`. Specifically, api keys for access to roboflow datasets and model registry (weights and biases) need to be set. The application stack can then be built and launched using `./run.sh` from the root directory.  
 The UI is divided into two workflows, one for creating reference courts for player positions. And the other for running inference on a basketball video.
 
 ### Court Creation User Flow
